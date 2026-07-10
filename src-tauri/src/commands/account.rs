@@ -1,0 +1,130 @@
+use crate::error::AppResult;
+use crate::models::account::Account;
+use crate::state::AppState;
+use sqlx::SqlitePool;
+use tauri::State;
+const ACCOUNT_COLUMNS: &str =
+    "id, number, name, description, owner, currency, color, created_at, updated_at";
+pub async fn create_account_impl(
+    db: &SqlitePool,
+    number: String,
+    name: String,
+    description: Option<String>,
+    owner: String,
+    currency: Option<String>,
+    color: Option<String>,
+) -> AppResult<Account> {
+    let currency = currency.unwrap_or_else(|| "USD".to_string());
+    let account = sqlx::query_as::<_, Account>(&format!(
+        "INSERT INTO accounts (number, name, description, owner, currency, color)
+         VALUES (?, ?, ?, ?, ?, ?)
+         RETURNING {ACCOUNT_COLUMNS}"
+    ))
+    .bind(number)
+    .bind(name)
+    .bind(description)
+    .bind(owner)
+    .bind(currency)
+    .bind(color)
+    .fetch_one(db)
+    .await?;
+    Ok(account)
+}
+pub async fn list_accounts_impl(db: &SqlitePool) -> AppResult<Vec<Account>> {
+    let accounts = sqlx::query_as::<_, Account>(&format!(
+        "SELECT {ACCOUNT_COLUMNS} FROM accounts ORDER BY id"
+    ))
+    .fetch_all(db)
+    .await?;
+    Ok(accounts)
+}
+pub async fn get_account_impl(db: &SqlitePool, id: i64) -> AppResult<Account> {
+    let account = sqlx::query_as::<_, Account>(&format!(
+        "SELECT {ACCOUNT_COLUMNS} FROM accounts WHERE id = ?"
+    ))
+    .bind(id)
+    .fetch_one(db)
+    .await?;
+    Ok(account)
+}
+pub async fn update_account_impl(
+    db: &SqlitePool,
+    id: i64,
+    number: String,
+    name: String,
+    description: Option<String>,
+    owner: String,
+    currency: String,
+    color: Option<String>,
+) -> AppResult<Account> {
+    let account = sqlx::query_as::<_, Account>(&format!(
+        "UPDATE accounts
+         SET number = ?, name = ?, description = ?, owner = ?, currency = ?, color = ?
+         WHERE id = ?
+         RETURNING {ACCOUNT_COLUMNS}"
+    ))
+    .bind(number)
+    .bind(name)
+    .bind(description)
+    .bind(owner)
+    .bind(currency)
+    .bind(color)
+    .bind(id)
+    .fetch_one(db)
+    .await?;
+    Ok(account)
+}
+pub async fn delete_account_impl(db: &SqlitePool, id: i64) -> AppResult<()> {
+    sqlx::query("DELETE FROM accounts WHERE id = ?")
+        .bind(id)
+        .execute(db)
+        .await?;
+    Ok(())
+}
+#[tauri::command]
+pub async fn create_account(
+    state: State<'_, AppState>,
+    number: String,
+    name: String,
+    description: Option<String>,
+    owner: String,
+    currency: Option<String>,
+    color: Option<String>,
+) -> AppResult<Account> {
+    create_account_impl(&state.db, number, name, description, owner, currency, color).await
+}
+#[tauri::command]
+pub async fn list_accounts(state: State<'_, AppState>) -> AppResult<Vec<Account>> {
+    list_accounts_impl(&state.db).await
+}
+#[tauri::command]
+pub async fn get_account(state: State<'_, AppState>, id: i64) -> AppResult<Account> {
+    get_account_impl(&state.db, id).await
+}
+#[tauri::command]
+pub async fn update_account(
+    state: State<'_, AppState>,
+    id: i64,
+    number: String,
+    name: String,
+    description: Option<String>,
+    owner: String,
+    currency: String,
+    color: Option<String>,
+) -> AppResult<Account> {
+    update_account_impl(
+        &state.db,
+        id,
+        number,
+        name,
+        description,
+        owner,
+        currency,
+        color,
+    )
+    .await
+}
+#[tauri::command]
+pub async fn delete_account(state: State<'_, AppState>, id: i64) -> AppResult<()> {
+    delete_account_impl(&state.db, id).await
+}

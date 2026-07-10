@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+/* Configuración por defecto: Fondo negro y texto blanco */
+@theme {
+    --color-background: #000000;
+    --color-foreground: #ffffff;
+}
+
+body {
+    background-color: rgb(15 15 15);
+    color: rgb(255 255 255);
+}
+
+/* Opcional: Asegurar que todos los elementos hereden el color de texto por defecto */
+* {
+    color: inherit;
+}
