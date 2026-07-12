@@ -74,3 +74,54 @@ export function getAccountBalance(
 ): Promise<number> {
   return invoke("get_account_balance", { accountId, asOf: asOf ?? null });
 }
+
+// ============ Reportes / Historial con filtros flexibles ============
+
+export interface TransactionFilters {
+  accountId?: number | null;
+  relatedAccountId?: number | null;
+  type?: "deposit" | "withdrawal" | "transfer" | null;
+  currency?: string | null;
+  amountMin?: number | null;
+  amountMax?: number | null;
+  description?: string | null;
+  from?: string | null;
+  to?: string | null;
+  sortBy?: "occurred_at" | "amount" | null;
+  sortDir?: "asc" | "desc" | null;
+  limit?: number | null;
+  offset?: number | null;
+}
+
+export interface TransactionRecord extends Transaction {
+  account_name: string;
+  account_number: string;
+  currency: string;
+  related_account_name: string | null;
+  related_account_number: string | null;
+}
+
+export interface TransactionStats {
+  total_count: number;
+  total_deposits: number;
+  total_withdrawals: number;
+  total_transfers: number;
+}
+
+export function listTransactionsReport(
+  filters: TransactionFilters = {}
+): Promise<TransactionRecord[]> {
+  return invoke("list_transactions_report", { filters });
+}
+
+export function countTransactionsReport(
+  filters: TransactionFilters = {}
+): Promise<number> {
+  return invoke("count_transactions_report", { filters });
+}
+
+export function getTransactionsStats(
+  filters: TransactionFilters = {}
+): Promise<TransactionStats> {
+  return invoke("get_transactions_stats", { filters });
+}

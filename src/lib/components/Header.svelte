@@ -1,9 +1,10 @@
 <div>
     <nav class="flex w-full gap-4 p-4 bg-[#171717]">
         <a href="/" class="hover:underline">Cuentas</a>
-        <a href="/" class="hover:underline">Estadísticas</a>
-        <a href="/" class="hover:underline mr-auto">Informes</a>
-        <a href="/" class="hover:underline">Acerca de</a>
+        <a href="/history" class="hover:underline">Historial</a>
+        <a href="/statistics" class="hover:underline">Estadísticas</a>
+        <a href="/reports" class="hover:underline mr-auto">Informes</a>
+        <a href="/about" class="hover:underline">Acerca de</a>
     </nav>
 </div>
 

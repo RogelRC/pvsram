@@ -1,8 +1,11 @@
 <script lang="ts">
-    import { Plus, X, Save } from "lucide-svelte";
-    import { createAccount } from "$lib/services/accounts";
+    import { Plus, X, Save, ArrowLeft } from "lucide-svelte";
+    import { createAccount, listAccounts } from "$lib/services/accounts";
 
     let { onCreated }: { onCreated?: () => void } = $props();
+
+    const CUSTOM_OPTION = "__custom__";
+    const DEFAULT_CURRENCIES = ["USD", "EUR", "CUP", "MLC"];
 
     let isOpen = $state(false);
     let saving = $state(false);
@@ -14,9 +17,31 @@
     let owner = $state("");
     let color = $state("#a1a1aa"); // valor por defecto (zinc-400)
 
-    function menu() {
+    let availableCurrencies = $state<string[]>(DEFAULT_CURRENCIES);
+    let selectedCurrency = $state("USD");
+    let isCustomCurrency = $state(false);
+    let customCurrency = $state("");
+
+    async function menu() {
         isOpen = !isOpen;
-        if (!isOpen) resetForm();
+        if (isOpen) {
+            await loadCurrencies();
+        } else {
+            resetForm();
+        }
+    }
+
+    async function loadCurrencies() {
+        try {
+            const accounts = await listAccounts();
+            const used = accounts.map((a) => a.currency).filter(Boolean);
+            const merged = Array.from(
+                new Set([...DEFAULT_CURRENCIES, ...used]),
+            ).sort();
+            availableCurrencies = merged;
+        } catch {
+            availableCurrencies = DEFAULT_CURRENCIES;
+        }
     }
 
     function resetForm() {
@@ -25,15 +50,45 @@
         description = "";
         owner = "";
         color = "#a1a1aa";
+        selectedCurrency = "USD";
+        isCustomCurrency = false;
+        customCurrency = "";
         error = null;
         saving = false;
+    }
+
+    function onCurrencySelect(e: Event) {
+        const value = (e.target as HTMLSelectElement).value;
+        if (value === CUSTOM_OPTION) {
+            isCustomCurrency = true;
+            customCurrency = "";
+        } else {
+            selectedCurrency = value;
+        }
+    }
+
+    function backToSelect() {
+        isCustomCurrency = false;
+        customCurrency = "";
+    }
+
+    function resolvedCurrency(): string {
+        return isCustomCurrency
+            ? customCurrency.trim().toUpperCase()
+            : selectedCurrency;
     }
 
     async function handleSave() {
         error = null;
 
+        const currency = resolvedCurrency();
+
         if (!number.trim() || !name.trim() || !owner.trim()) {
             error = "Número, nombre y propietario son obligatorios";
+            return;
+        }
+        if (!currency) {
+            error = "Debes indicar una moneda";
             return;
         }
 
@@ -44,6 +99,7 @@
                 name: name.trim(),
                 description: description.trim() || null,
                 owner: owner.trim(),
+                currency,
                 color,
             });
             onCreated?.();
@@ -120,6 +176,39 @@
                     bind:value={owner}
                     disabled={saving}
                 />
+            </div>
+            <div class="flex items-center gap-2">
+                <span>Moneda:</span>
+                {#if isCustomCurrency}
+                    <button
+                        onclick={backToSelect}
+                        disabled={saving}
+                        class="flex items-center justify-center border rounded-md bg-white/10 hover:bg-white/20 p-1 shrink-0"
+                        title="Volver a la lista"
+                    >
+                        <ArrowLeft size={16} />
+                    </button>
+                    <input
+                        class="p-1 w-full bg-zinc-800 rounded-md uppercase"
+                        type="text"
+                        maxlength="10"
+                        placeholder="Ej: MXN"
+                        bind:value={customCurrency}
+                        disabled={saving}
+                    />
+                {:else}
+                    <select
+                        class="p-1 w-full bg-zinc-800 rounded-md"
+                        value={selectedCurrency}
+                        onchange={onCurrencySelect}
+                        disabled={saving}
+                    >
+                        {#each availableCurrencies as cur (cur)}
+                            <option value={cur}>{cur}</option>
+                        {/each}
+                        <option value={CUSTOM_OPTION}>Otra...</option>
+                    </select>
+                {/if}
             </div>
             <div class="flex items-center gap-2">
                 <span>Color:</span>

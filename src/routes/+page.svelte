@@ -26,7 +26,11 @@
     </div>
     <div class="grid lg:grid-cols-4 grid-cols-2 gap-4">
         {#each accounts as account (account.id)}
-            <Card {account} balance={balances[account.id] ?? 0} />
+            <Card
+                {account}
+                balance={balances[account.id] ?? 0}
+                onUpdated={loadAccounts}
+            />
         {/each}
     </div>
     {#if accounts.length === 0}

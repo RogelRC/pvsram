@@ -34,3 +34,4 @@ sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "migrate"] }
 tokio = { version = "1", features = ["full"] }
 rand = { version = "0.8", features = ["std_rng"] }
 fake = { version = "2", features = ["derive"] }
+chrono = { version = "0.4", features = ["clock"] }
