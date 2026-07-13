@@ -37,3 +37,5 @@ fake = { version = "2", features = ["derive"] }
 chrono = { version = "0.4", features = ["clock"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
+argon2 = "0.5"
+

@@ -4,6 +4,8 @@
         listTransactionsReport,
         type TransactionRecord,
     } from "$lib/services/transactions";
+    import EditTransactionButton from "$lib/components/Transactions/EditTransactionButton.svelte";
+    import DeleteTransactionButton from "$lib/components/Transactions/DeleteTransactionButton.svelte";
 
     const TYPE_LABELS: Record<string, string> = {
         deposit: "Ingreso",
@@ -75,6 +77,7 @@
                         <th class="p-2">Destino</th>
                         <th class="p-2">Descripción</th>
                         <th class="p-2 text-right">Monto</th>
+                        <th class="p-2 text-right">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -105,6 +108,20 @@
                             >
                             <td class="p-2 text-right font-medium">
                                 {formatAmount(t.amount, t.currency)}
+                            </td>
+                            <td class="p-2">
+                                <div
+                                    class="flex justify-end items-center gap-2"
+                                >
+                                    <EditTransactionButton
+                                        transaction={t}
+                                        onUpdated={loadData}
+                                    />
+                                    <DeleteTransactionButton
+                                        id={t.id}
+                                        onDeleted={loadData}
+                                    />
+                                </div>
                             </td>
                         </tr>
                     {/each}

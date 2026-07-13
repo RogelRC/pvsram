@@ -6,6 +6,9 @@ pub mod state;
 use commands::account::{
     create_account, delete_account, get_account, list_accounts, update_account,
 };
+use commands::auth::{
+    change_password, has_password, is_authenticated, login, logout, set_initial_password,
+};
 use commands::transaction::{
     count_transactions_report, create_deposit, create_transfer, create_withdrawal,
     delete_transaction, get_account_balance, get_monthly_balance_report, get_movements_report,
@@ -29,7 +32,10 @@ pub fn run() {
             let handle = app.handle().clone();
             tauri::async_runtime::block_on(async move {
                 let pool = db::init_db(&handle).await;
-                handle.manage(AppState { db: pool });
+                handle.manage(AppState {
+                    db: pool,
+                    authenticated: std::sync::Mutex::new(false),
+                });
             });
             Ok(())
         })
@@ -54,7 +60,13 @@ pub fn run() {
             get_stats_by_currency,
             get_movements_report,
             get_monthly_balance_report,
-            update_transaction
+            update_transaction,
+            has_password,
+            set_initial_password,
+            login,
+            logout,
+            is_authenticated,
+            change_password
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
