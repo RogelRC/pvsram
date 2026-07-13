@@ -6,6 +6,8 @@
         getMonthlyBalanceReport,
         type MonthlyBalanceReport,
     } from "$lib/services/reports";
+    import ExportButtons from "$lib/components/ExportButtons.svelte";
+    import type { ExportColumn } from "$lib/utils/export";
 
     type Tab = "balances" | "movements" | "monthly";
 
@@ -108,6 +110,36 @@
     }
 
     onMount(loadBalances);
+
+    // Columnas de exportación (mismo orden/formato que las tablas)
+    const balancesColumns: ExportColumn<AccountStats>[] = [
+        { header: "Cuenta", accessor: (a) => `${a.account_name} (${a.account_number})` },
+        { header: "Moneda", accessor: (a) => a.currency },
+        { header: "Saldo actual", accessor: (a) => a.balance.toFixed(2) },
+    ];
+
+    const movementsColumns: ExportColumn<AccountStats>[] = [
+        { header: "Cuenta", accessor: (a) => `${a.account_name} (${a.account_number})` },
+        { header: "Moneda", accessor: (a) => a.currency },
+        {
+            header: "Entradas",
+            accessor: (a) => (a.total_deposits + a.total_transfers_in).toFixed(2),
+        },
+        {
+            header: "Salidas",
+            accessor: (a) => (a.total_withdrawals + a.total_transfers_out).toFixed(2),
+        },
+        { header: "Variación neta", accessor: (a) => a.balance.toFixed(2) },
+        { header: "Operaciones", accessor: (a) => a.transaction_count },
+    ];
+
+    const monthlyColumns: ExportColumn<MonthlyBalanceReport>[] = [
+        { header: "Cuenta", accessor: (m) => `${m.account_name} (${m.account_number})` },
+        { header: "Moneda", accessor: (m) => m.currency },
+        { header: "Saldo inicial", accessor: (m) => m.opening_balance.toFixed(2) },
+        { header: "Saldo final", accessor: (m) => m.closing_balance.toFixed(2) },
+        { header: "Variación", accessor: (m) => m.net_change.toFixed(2) },
+    ];
 </script>
 
 <main class="flex flex-col p-4 gap-4">
@@ -133,9 +165,15 @@
 
     <!-- Informe 1: saldos actuales -->
     {#if tab === "balances"}
-        <div
-            class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden"
-        >
+        <div class="flex justify-end">
+            <ExportButtons
+                title="Saldos actuales"
+                data={balances}
+                columns={balancesColumns}
+                filename="saldos-actuales"
+            />
+        </div>
+        <div class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
             {#if loading}
                 <p class="p-4 text-zinc-400">Cargando...</p>
             {:else if balances.length === 0}
@@ -176,35 +214,41 @@
 
     <!-- Informe 2: movimientos en un rango -->
     {#if tab === "movements"}
-        <div class="flex items-end gap-3">
-            <div class="flex flex-col gap-1">
-                <span class="text-sm text-zinc-400">Desde</span>
-                <input
-                    class="p-1 bg-zinc-800 rounded-md"
-                    type="date"
-                    bind:value={movementsFrom}
-                />
+        <div class="flex items-end justify-between gap-3 flex-wrap">
+            <div class="flex items-end gap-3">
+                <div class="flex flex-col gap-1">
+                    <span class="text-sm text-zinc-400">Desde</span>
+                    <input
+                        class="p-1 bg-zinc-800 rounded-md"
+                        type="date"
+                        bind:value={movementsFrom}
+                    />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <span class="text-sm text-zinc-400">Hasta</span>
+                    <input
+                        class="p-1 bg-zinc-800 rounded-md"
+                        type="date"
+                        bind:value={movementsTo}
+                    />
+                </div>
+                <button
+                    type="button"
+                    onclick={loadMovements}
+                    class="border rounded-lg bg-white/10 hover:bg-white/20 border-zinc-800 px-4 py-1"
+                >
+                    Aplicar
+                </button>
             </div>
-            <div class="flex flex-col gap-1">
-                <span class="text-sm text-zinc-400">Hasta</span>
-                <input
-                    class="p-1 bg-zinc-800 rounded-md"
-                    type="date"
-                    bind:value={movementsTo}
-                />
-            </div>
-            <button
-                type="button"
-                onclick={loadMovements}
-                class="border rounded-lg bg-white/10 hover:bg-white/20 border-zinc-800 px-4 py-1"
-            >
-                Aplicar
-            </button>
+            <ExportButtons
+                title="Movimientos ({movementsFrom} a {movementsTo})"
+                data={movements}
+                columns={movementsColumns}
+                filename="movimientos-{movementsFrom}_a_{movementsTo}"
+            />
         </div>
 
-        <div
-            class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden"
-        >
+        <div class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
             {#if loading}
                 <p class="p-4 text-zinc-400">Cargando...</p>
             {:else if movements.length === 0}
@@ -229,19 +273,15 @@
                                 </td>
                                 <td class="p-2">{m.currency}</td>
                                 <td class="p-2 text-right text-green-400">
-                                    {fmt(
-                                        m.total_deposits + m.total_transfers_in,
-                                    )}
+                                    {fmt(m.total_deposits + m.total_transfers_in)}
                                 </td>
                                 <td class="p-2 text-right text-red-400">
                                     {fmt(
-                                        m.total_withdrawals +
-                                            m.total_transfers_out,
+                                        m.total_withdrawals + m.total_transfers_out,
                                     )}
                                 </td>
                                 <td
-                                    class="p-2 text-right font-bold {m.balance >=
-                                    0
+                                    class="p-2 text-right font-bold {m.balance >= 0
                                         ? 'text-green-400'
                                         : 'text-red-400'}"
                                 >
@@ -260,38 +300,44 @@
 
     <!-- Informe 3: saldo inicial y final del mes -->
     {#if tab === "monthly"}
-        <div class="flex items-end gap-3">
-            <div class="flex flex-col gap-1">
-                <span class="text-sm text-zinc-400">Mes</span>
-                <select
-                    class="p-1 bg-zinc-800 rounded-md"
-                    bind:value={selectedMonth}
+        <div class="flex items-end justify-between gap-3 flex-wrap">
+            <div class="flex items-end gap-3">
+                <div class="flex flex-col gap-1">
+                    <span class="text-sm text-zinc-400">Mes</span>
+                    <select
+                        class="p-1 bg-zinc-800 rounded-md"
+                        bind:value={selectedMonth}
+                    >
+                        {#each MONTH_NAMES as name, i (i)}
+                            <option value={i + 1}>{name}</option>
+                        {/each}
+                    </select>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <span class="text-sm text-zinc-400">Año</span>
+                    <input
+                        class="p-1 w-24 bg-zinc-800 rounded-md"
+                        type="number"
+                        bind:value={selectedYear}
+                    />
+                </div>
+                <button
+                    type="button"
+                    onclick={loadMonthly}
+                    class="border rounded-lg bg-white/10 hover:bg-white/20 border-zinc-800 px-4 py-1"
                 >
-                    {#each MONTH_NAMES as name, i (i)}
-                        <option value={i + 1}>{name}</option>
-                    {/each}
-                </select>
+                    Aplicar
+                </button>
             </div>
-            <div class="flex flex-col gap-1">
-                <span class="text-sm text-zinc-400">Año</span>
-                <input
-                    class="p-1 w-24 bg-zinc-800 rounded-md"
-                    type="number"
-                    bind:value={selectedYear}
-                />
-            </div>
-            <button
-                type="button"
-                onclick={loadMonthly}
-                class="border rounded-lg bg-white/10 hover:bg-white/20 border-zinc-800 px-4 py-1"
-            >
-                Aplicar
-            </button>
+            <ExportButtons
+                title="Saldo mensual {MONTH_NAMES[selectedMonth - 1]} {selectedYear}"
+                data={monthly}
+                columns={monthlyColumns}
+                filename="saldo-mensual-{selectedYear}-{String(selectedMonth).padStart(2, '0')}"
+            />
         </div>
 
-        <div
-            class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden"
-        >
+        <div class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
             {#if loading}
                 <p class="p-4 text-zinc-400">Cargando...</p>
             {:else if monthly.length === 0}
@@ -338,9 +384,7 @@
                                         ? 'text-green-400'
                                         : 'text-red-400'}"
                                 >
-                                    {m.net_change >= 0 ? "+" : ""}{fmt(
-                                        m.net_change,
-                                    )}
+                                    {m.net_change >= 0 ? "+" : ""}{fmt(m.net_change)}
                                 </td>
                             </tr>
                         {/each}
