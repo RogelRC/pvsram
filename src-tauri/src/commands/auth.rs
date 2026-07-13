@@ -99,13 +99,16 @@ pub async fn change_password(
     }
 
     let new_hash = hash_password(&new_password)?;
-    sqlx::query(
-        "UPDATE app_auth SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = 1",
-    )
-    .bind(new_hash)
-    .execute(&state.db)
-    .await
-    .map_err(|e| e.to_string())?;
+    let now = chrono::Local::now()
+        .naive_local()
+        .format("%Y-%m-%d %H:%M:%S")
+        .to_string();
+    sqlx::query("UPDATE app_auth SET password_hash = ?, updated_at = ? WHERE id = 1")
+        .bind(&new_hash)
+        .bind(now)
+        .execute(&state.db)
+        .await
+        .map_err(|e| e.to_string())?;
 
     Ok(())
 }

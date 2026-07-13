@@ -1,1 +1,2 @@
-ALTER TABLE accounts ADD COLUMN color TEXT;
+ALTER TABLE accounts
+ADD COLUMN color TEXT;

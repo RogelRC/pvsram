@@ -9,6 +9,25 @@ use tauri::State;
 const TRANSACTION_COLUMNS: &str =
     "id, type, account_id, related_account_id, amount, description, occurred_at, created_at, updated_at";
 
+fn local_timestamp() -> String {
+    Local::now()
+        .naive_local()
+        .format("%Y-%m-%d %H:%M:%S")
+        .to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::local_timestamp;
+
+    #[test]
+    fn local_timestamp_uses_sqlite_style_format() {
+        let timestamp = local_timestamp();
+        assert!(timestamp.contains(':'));
+        assert!(!timestamp.contains('Z'));
+    }
+}
+
 pub async fn create_deposit_impl(
     db: &SqlitePool,
     account_id: i64,
@@ -16,15 +35,19 @@ pub async fn create_deposit_impl(
     description: Option<String>,
     occurred_at: Option<String>,
 ) -> AppResult<Transaction> {
+    let now = local_timestamp();
     let transaction = sqlx::query_as::<_, Transaction>(&format!(
-        "INSERT INTO transactions (type, account_id, amount, description, occurred_at)
-         VALUES ('deposit', ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))
+        "INSERT INTO transactions (type, account_id, amount, description, occurred_at, created_at, updated_at)
+         VALUES ('deposit', ?, ?, ?, COALESCE(?, ?), ?, ?)
          RETURNING {TRANSACTION_COLUMNS}"
     ))
     .bind(account_id)
     .bind(amount)
     .bind(description)
     .bind(occurred_at)
+    .bind(now.clone())
+    .bind(now.clone())
+    .bind(now)
     .fetch_one(db)
     .await?;
 
@@ -38,15 +61,19 @@ pub async fn create_withdrawal_impl(
     description: Option<String>,
     occurred_at: Option<String>,
 ) -> AppResult<Transaction> {
+    let now = local_timestamp();
     let transaction = sqlx::query_as::<_, Transaction>(&format!(
-        "INSERT INTO transactions (type, account_id, amount, description, occurred_at)
-         VALUES ('withdrawal', ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))
+        "INSERT INTO transactions (type, account_id, amount, description, occurred_at, created_at, updated_at)
+         VALUES ('withdrawal', ?, ?, ?, COALESCE(?, ?), ?, ?)
          RETURNING {TRANSACTION_COLUMNS}"
     ))
     .bind(account_id)
     .bind(amount)
     .bind(description)
     .bind(occurred_at)
+    .bind(now.clone())
+    .bind(now.clone())
+    .bind(now)
     .fetch_one(db)
     .await?;
 
@@ -61,9 +88,10 @@ pub async fn create_transfer_impl(
     description: Option<String>,
     occurred_at: Option<String>,
 ) -> AppResult<Transaction> {
+    let now = local_timestamp();
     let transaction = sqlx::query_as::<_, Transaction>(&format!(
-        "INSERT INTO transactions (type, account_id, related_account_id, amount, description, occurred_at)
-         VALUES ('transfer', ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))
+        "INSERT INTO transactions (type, account_id, related_account_id, amount, description, occurred_at, created_at, updated_at)
+         VALUES ('transfer', ?, ?, ?, ?, COALESCE(?, ?), ?, ?)
          RETURNING {TRANSACTION_COLUMNS}"
     ))
     .bind(account_id)
@@ -71,6 +99,9 @@ pub async fn create_transfer_impl(
     .bind(amount)
     .bind(description)
     .bind(occurred_at)
+    .bind(now.clone())
+    .bind(now.clone())
+    .bind(now)
     .fetch_one(db)
     .await?;
 
@@ -257,6 +288,7 @@ pub struct TransactionRecord {
     pub account_name: String,
     pub account_number: String,
     pub currency: String,
+    pub color: Option<String>,
     pub related_account_name: Option<String>,
     pub related_account_number: Option<String>,
 }
@@ -352,6 +384,7 @@ pub async fn list_transactions_report_impl(
             t.id, t.type, t.account_id, t.related_account_id, t.amount, t.description,
             t.occurred_at, t.created_at, t.updated_at,
             a.name AS account_name, a.number AS account_number, a.currency AS currency,
+            a.color AS color,
             ra.name AS related_account_name, ra.number AS related_account_number
          {JOINED_FROM}"
     ));
@@ -806,9 +839,10 @@ pub async fn update_transaction_impl(
     description: Option<String>,
     occurred_at: String,
 ) -> AppResult<Transaction> {
+    let now = local_timestamp();
     let transaction = sqlx::query_as::<_, Transaction>(&format!(
         "UPDATE transactions
-         SET related_account_id = ?, amount = ?, description = ?, occurred_at = ?
+         SET related_account_id = ?, amount = ?, description = ?, occurred_at = ?, updated_at = ?
          WHERE id = ?
          RETURNING {TRANSACTION_COLUMNS}"
     ))
@@ -816,6 +850,7 @@ pub async fn update_transaction_impl(
     .bind(amount)
     .bind(description)
     .bind(occurred_at)
+    .bind(now)
     .bind(id)
     .fetch_one(db)
     .await?;

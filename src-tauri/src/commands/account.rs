@@ -1,10 +1,18 @@
 use crate::error::AppResult;
 use crate::models::account::Account;
 use crate::state::AppState;
+use chrono::Local;
 use sqlx::SqlitePool;
 use tauri::State;
 const ACCOUNT_COLUMNS: &str =
     "id, number, name, description, owner, currency, color, created_at, updated_at";
+
+fn local_timestamp() -> String {
+    Local::now()
+        .naive_local()
+        .format("%Y-%m-%d %H:%M:%S")
+        .to_string()
+}
 pub async fn create_account_impl(
     db: &SqlitePool,
     number: String,
@@ -15,9 +23,10 @@ pub async fn create_account_impl(
     color: Option<String>,
 ) -> AppResult<Account> {
     let currency = currency.unwrap_or_else(|| "USD".to_string());
+    let now = local_timestamp();
     let account = sqlx::query_as::<_, Account>(&format!(
-        "INSERT INTO accounts (number, name, description, owner, currency, color)
-         VALUES (?, ?, ?, ?, ?, ?)
+        "INSERT INTO accounts (number, name, description, owner, currency, color, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
          RETURNING {ACCOUNT_COLUMNS}"
     ))
     .bind(number)
@@ -26,6 +35,8 @@ pub async fn create_account_impl(
     .bind(owner)
     .bind(currency)
     .bind(color)
+    .bind(now.clone())
+    .bind(now)
     .fetch_one(db)
     .await?;
     Ok(account)
@@ -57,9 +68,10 @@ pub async fn update_account_impl(
     currency: String,
     color: Option<String>,
 ) -> AppResult<Account> {
+    let now = local_timestamp();
     let account = sqlx::query_as::<_, Account>(&format!(
         "UPDATE accounts
-         SET number = ?, name = ?, description = ?, owner = ?, currency = ?, color = ?
+         SET number = ?, name = ?, description = ?, owner = ?, currency = ?, color = ?, updated_at = ?
          WHERE id = ?
          RETURNING {ACCOUNT_COLUMNS}"
     ))
@@ -69,6 +81,7 @@ pub async fn update_account_impl(
     .bind(owner)
     .bind(currency)
     .bind(color)
+    .bind(now)
     .bind(id)
     .fetch_one(db)
     .await?;
