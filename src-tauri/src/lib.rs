@@ -10,7 +10,7 @@ use commands::transaction::{
     count_transactions_report, create_deposit, create_transfer, create_withdrawal,
     delete_transaction, get_account_balance, get_monthly_balance_report, get_movements_report,
     get_stats_by_account, get_stats_by_currency, get_transaction, get_transactions_stats,
-    list_transactions, list_transactions_report,
+    list_transactions, list_transactions_report, update_transaction,
 };
 use state::AppState;
 use tauri::Manager;
@@ -53,7 +53,8 @@ pub fn run() {
             get_stats_by_account,
             get_stats_by_currency,
             get_movements_report,
-            get_monthly_balance_report
+            get_monthly_balance_report,
+            update_transaction
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

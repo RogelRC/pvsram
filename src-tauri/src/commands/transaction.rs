@@ -1,11 +1,10 @@
 use crate::error::AppResult;
 use crate::models::transaction::Transaction;
 use crate::state::AppState;
+use chrono::{Datelike, Duration, Local, NaiveDate};
 use sqlx::SqlitePool;
 use sqlx::{QueryBuilder, Sqlite};
 use tauri::State;
-use chrono::{Datelike, Duration, Local, NaiveDate};
-
 
 const TRANSACTION_COLUMNS: &str =
     "id, type, account_id, related_account_id, amount, description, occurred_at, created_at, updated_at";
@@ -611,7 +610,6 @@ pub async fn get_stats_by_currency(
     get_stats_by_currency_impl(&state.db, &filters).await
 }
 
-
 // ============ Informes ============
 
 fn month_first_last(year: i32, month: u32) -> (NaiveDate, NaiveDate) {
@@ -798,4 +796,49 @@ pub async fn get_monthly_balance_report(
     filters: MonthlyBalanceFilters,
 ) -> AppResult<Vec<MonthlyBalanceReport>> {
     get_monthly_balance_report_impl(&state.db, &filters).await
+}
+
+pub async fn update_transaction_impl(
+    db: &SqlitePool,
+    id: i64,
+    related_account_id: Option<i64>,
+    amount: f64,
+    description: Option<String>,
+    occurred_at: String,
+) -> AppResult<Transaction> {
+    let transaction = sqlx::query_as::<_, Transaction>(&format!(
+        "UPDATE transactions
+         SET related_account_id = ?, amount = ?, description = ?, occurred_at = ?
+         WHERE id = ?
+         RETURNING {TRANSACTION_COLUMNS}"
+    ))
+    .bind(related_account_id)
+    .bind(amount)
+    .bind(description)
+    .bind(occurred_at)
+    .bind(id)
+    .fetch_one(db)
+    .await?;
+
+    Ok(transaction)
+}
+
+#[tauri::command]
+pub async fn update_transaction(
+    state: State<'_, AppState>,
+    id: i64,
+    related_account_id: Option<i64>,
+    amount: f64,
+    description: Option<String>,
+    occurred_at: String,
+) -> AppResult<Transaction> {
+    update_transaction_impl(
+        &state.db,
+        id,
+        related_account_id,
+        amount,
+        description,
+        occurred_at,
+    )
+    .await
 }
