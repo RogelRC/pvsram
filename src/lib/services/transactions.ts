@@ -99,6 +99,7 @@ export interface TransactionRecord extends Transaction {
     currency: string;
     related_account_name: string | null;
     related_account_number: string | null;
+    color: string | null;
 }
 
 export interface TransactionStats {

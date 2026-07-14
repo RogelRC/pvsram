@@ -90,8 +90,8 @@
                 bind:value={password}
                 onkeydown={handleKeydown}
                 disabled={saving}
-                autofocus
             />
+
             {#if mode === "setup"}
                 <input
                     class="p-2 w-full bg-zinc-800 rounded-md"

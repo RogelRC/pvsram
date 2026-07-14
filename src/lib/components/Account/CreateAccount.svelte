@@ -160,7 +160,7 @@
                 />
             </div>
             <div class="flex items-center gap-2">
-                <span>Descripción:</span>
+                <span>Destino:</span>
                 <input
                     class="p-1 w-full bg-zinc-800 rounded-md"
                     type="text"
@@ -169,7 +169,7 @@
                 />
             </div>
             <div class="flex items-center gap-2">
-                <span>Propietario:</span>
+                <span>Comentario:</span>
                 <input
                     class="p-1 w-full bg-zinc-800 rounded-md"
                     type="text"

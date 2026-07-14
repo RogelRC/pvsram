@@ -1,6 +1,9 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { getStatsByAccount, type AccountStats } from "$lib/services/statistics";
+    import {
+        getStatsByAccount,
+        type AccountStats,
+    } from "$lib/services/statistics";
     import {
         getMovementsReport,
         getMonthlyBalanceReport,
@@ -18,18 +21,28 @@
     ];
 
     const MONTH_NAMES = [
-        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+        "Enero",
+        "Febrero",
+        "Marzo",
+        "Abril",
+        "Mayo",
+        "Junio",
+        "Julio",
+        "Agosto",
+        "Septiembre",
+        "Octubre",
+        "Noviembre",
+        "Diciembre",
     ];
 
     let tab = $state<Tab>("balances");
     let loading = $state(false);
     let error = $state<string | null>(null);
 
-    // Informe 1: saldos actuales
+    let allBalances = $state<AccountStats[]>([]);
     let balances = $state<AccountStats[]>([]);
+    let balanceFilters = $state({ account: "", currency: "" });
 
-    // Informe 2: movimientos
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -38,17 +51,100 @@
     }
     let movementsFrom = $state(toDateInput(monthStart));
     let movementsTo = $state(toDateInput(monthEnd));
+    let allMovements = $state<AccountStats[]>([]);
     let movements = $state<AccountStats[]>([]);
+    let movementFilters = $state({ account: "", currency: "" });
 
-    // Informe 3: saldo inicial/final del mes
     let selectedYear = $state(now.getFullYear());
     let selectedMonth = $state(now.getMonth() + 1);
+    let allMonthly = $state<MonthlyBalanceReport[]>([]);
     let monthly = $state<MonthlyBalanceReport[]>([]);
+    let monthlyFilters = $state({ account: "", currency: "" });
+    let exactMatchEnabled = $state(false);
 
     function fmt(n: number): string {
         return n.toLocaleString(undefined, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
+        });
+    }
+
+    function normalizeValue(value: string | null | undefined): string {
+        return (value ?? "").trim();
+    }
+
+    function matchesText(value: string, filterValue: string): boolean {
+        if (!filterValue) return true;
+        const normalizedValue = value.toLowerCase();
+        const normalizedFilter = filterValue.toLowerCase();
+        if (exactMatchEnabled) {
+            return normalizedValue === normalizedFilter;
+        }
+        return normalizedValue.includes(normalizedFilter);
+    }
+
+    function matchesAccountFilter(
+        accountName: string,
+        accountNumber: string,
+        filterValue: string,
+    ): boolean {
+        if (!filterValue) return true;
+        const candidates = [
+            accountName,
+            accountNumber,
+            `${accountName} (${accountNumber})`,
+            `${accountName} ${accountNumber}`,
+        ];
+        return candidates.some((candidate) =>
+            matchesText(candidate, filterValue),
+        );
+    }
+
+    function applyBalanceFilters() {
+        const accountFilter = normalizeValue(balanceFilters.account);
+        const currencyFilter = normalizeValue(balanceFilters.currency);
+        balances = allBalances.filter((account) => {
+            const matchesAccount = matchesAccountFilter(
+                account.account_name,
+                account.account_number,
+                accountFilter,
+            );
+            const matchesCurrency = matchesText(
+                account.currency,
+                currencyFilter,
+            );
+            return matchesAccount && matchesCurrency;
+        });
+    }
+
+    function applyMovementFilters() {
+        const accountFilter = normalizeValue(movementFilters.account);
+        const currencyFilter = normalizeValue(movementFilters.currency);
+        movements = allMovements.filter((account) => {
+            const matchesAccount = matchesAccountFilter(
+                account.account_name,
+                account.account_number,
+                accountFilter,
+            );
+            const matchesCurrency = matchesText(
+                account.currency,
+                currencyFilter,
+            );
+            return matchesAccount && matchesCurrency;
+        });
+    }
+
+    function applyMonthlyFilters() {
+        const accountFilter = normalizeValue(monthlyFilters.account);
+        const currencyFilter = normalizeValue(monthlyFilters.currency);
+        monthly = allMonthly.filter((item) => {
+            const matchesAccount = matchesAccountFilter(
+                item.account_name,
+                item.account_number,
+                accountFilter,
+            );
+            const matchesCurrency = matchesText(item.currency, currencyFilter);
+            return matchesAccount && matchesCurrency;
         });
     }
 
@@ -63,7 +159,8 @@
         loading = true;
         error = null;
         try {
-            balances = await getStatsByAccount();
+            allBalances = await getStatsByAccount();
+            applyBalanceFilters();
         } catch (e) {
             handleError(e);
         } finally {
@@ -75,10 +172,11 @@
         loading = true;
         error = null;
         try {
-            movements = await getMovementsReport({
+            allMovements = await getMovementsReport({
                 from: movementsFrom,
                 to: movementsTo,
             });
+            applyMovementFilters();
         } catch (e) {
             handleError(e);
         } finally {
@@ -90,10 +188,11 @@
         loading = true;
         error = null;
         try {
-            monthly = await getMonthlyBalanceReport({
+            allMonthly = await getMonthlyBalanceReport({
                 year: selectedYear,
                 month: selectedMonth,
             });
+            applyMonthlyFilters();
         } catch (e) {
             handleError(e);
         } finally {
@@ -104,40 +203,56 @@
     function selectTab(t: Tab) {
         tab = t;
         error = null;
-        if (t === "balances" && balances.length === 0) loadBalances();
-        if (t === "movements" && movements.length === 0) loadMovements();
-        if (t === "monthly" && monthly.length === 0) loadMonthly();
+        if (t === "balances" && allBalances.length === 0) loadBalances();
+        if (t === "movements" && allMovements.length === 0) loadMovements();
+        if (t === "monthly" && allMonthly.length === 0) loadMonthly();
     }
 
     onMount(loadBalances);
 
-    // Columnas de exportación (mismo orden/formato que las tablas)
     const balancesColumns: ExportColumn<AccountStats>[] = [
-        { header: "Cuenta", accessor: (a) => `${a.account_name} (${a.account_number})` },
+        {
+            header: "Tesorería",
+            accessor: (a) => `${a.account_name} (${a.account_number})`,
+        },
         { header: "Moneda", accessor: (a) => a.currency },
         { header: "Saldo actual", accessor: (a) => a.balance.toFixed(2) },
     ];
 
     const movementsColumns: ExportColumn<AccountStats>[] = [
-        { header: "Cuenta", accessor: (a) => `${a.account_name} (${a.account_number})` },
+        {
+            header: "Tesorería",
+            accessor: (a) => `${a.account_name} (${a.account_number})`,
+        },
         { header: "Moneda", accessor: (a) => a.currency },
         {
             header: "Entradas",
-            accessor: (a) => (a.total_deposits + a.total_transfers_in).toFixed(2),
+            accessor: (a) =>
+                (a.total_deposits + a.total_transfers_in).toFixed(2),
         },
         {
             header: "Salidas",
-            accessor: (a) => (a.total_withdrawals + a.total_transfers_out).toFixed(2),
+            accessor: (a) =>
+                (a.total_withdrawals + a.total_transfers_out).toFixed(2),
         },
         { header: "Variación neta", accessor: (a) => a.balance.toFixed(2) },
         { header: "Operaciones", accessor: (a) => a.transaction_count },
     ];
 
     const monthlyColumns: ExportColumn<MonthlyBalanceReport>[] = [
-        { header: "Cuenta", accessor: (m) => `${m.account_name} (${m.account_number})` },
+        {
+            header: "Tesorería",
+            accessor: (m) => `${m.account_name} (${m.account_number})`,
+        },
         { header: "Moneda", accessor: (m) => m.currency },
-        { header: "Saldo inicial", accessor: (m) => m.opening_balance.toFixed(2) },
-        { header: "Saldo final", accessor: (m) => m.closing_balance.toFixed(2) },
+        {
+            header: "Saldo inicial",
+            accessor: (m) => m.opening_balance.toFixed(2),
+        },
+        {
+            header: "Saldo final",
+            accessor: (m) => m.closing_balance.toFixed(2),
+        },
         { header: "Variación", accessor: (m) => m.net_change.toFixed(2) },
     ];
 </script>
@@ -165,6 +280,34 @@
 
     <!-- Informe 1: saldos actuales -->
     {#if tab === "balances"}
+        <div
+            class="flex flex-wrap gap-3 rounded-lg border border-zinc-800 bg-zinc-900/70 p-3"
+        >
+            <button
+                type="button"
+                class={`rounded-md border px-3 py-1 text-sm transition-colors ${exactMatchEnabled ? "border-amber-500 bg-amber-500/15 text-amber-400" : "border-zinc-700 bg-zinc-800 text-zinc-300"}`}
+                onclick={() => {
+                    exactMatchEnabled = !exactMatchEnabled;
+                    applyBalanceFilters();
+                }}
+            >
+                {exactMatchEnabled
+                    ? "Coincidencia exacta: ON"
+                    : "Coincidencia exacta: OFF"}
+            </button>
+            <input
+                class="min-w-44 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
+                placeholder="Tesorería"
+                bind:value={balanceFilters.account}
+                oninput={applyBalanceFilters}
+            />
+            <input
+                class="min-w-28 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
+                placeholder="Moneda"
+                bind:value={balanceFilters.currency}
+                oninput={applyBalanceFilters}
+            />
+        </div>
         <div class="flex justify-end">
             <ExportButtons
                 title="Saldos actuales"
@@ -173,16 +316,18 @@
                 filename="saldos-actuales"
             />
         </div>
-        <div class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+        <div
+            class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden"
+        >
             {#if loading}
                 <p class="p-4 text-zinc-400">Cargando...</p>
             {:else if balances.length === 0}
-                <p class="p-4 text-zinc-400">No hay cuentas</p>
+                <p class="p-4 text-zinc-400">No hay tesorerías</p>
             {:else}
                 <table class="w-full text-sm">
                     <thead class="bg-zinc-800/50 text-zinc-400 text-left">
                         <tr>
-                            <th class="p-2">Cuenta</th>
+                            <th class="p-2">Tesorería</th>
                             <th class="p-2">Moneda</th>
                             <th class="p-2 text-right">Saldo actual</th>
                         </tr>
@@ -248,7 +393,38 @@
             />
         </div>
 
-        <div class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+        <div
+            class="flex flex-wrap gap-3 rounded-lg border border-zinc-800 bg-zinc-900/70 p-3"
+        >
+            <button
+                type="button"
+                class={`rounded-md border px-3 py-1 text-sm transition-colors ${exactMatchEnabled ? "border-amber-500 bg-amber-500/15 text-amber-400" : "border-zinc-700 bg-zinc-800 text-zinc-300"}`}
+                onclick={() => {
+                    exactMatchEnabled = !exactMatchEnabled;
+                    applyMovementFilters();
+                }}
+            >
+                {exactMatchEnabled
+                    ? "Coincidencia exacta: ON"
+                    : "Coincidencia exacta: OFF"}
+            </button>
+            <input
+                class="min-w-44 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
+                placeholder="Tesorería"
+                bind:value={movementFilters.account}
+                oninput={applyMovementFilters}
+            />
+            <input
+                class="min-w-28 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
+                placeholder="Moneda"
+                bind:value={movementFilters.currency}
+                oninput={applyMovementFilters}
+            />
+        </div>
+
+        <div
+            class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden"
+        >
             {#if loading}
                 <p class="p-4 text-zinc-400">Cargando...</p>
             {:else if movements.length === 0}
@@ -257,7 +433,7 @@
                 <table class="w-full text-sm">
                     <thead class="bg-zinc-800/50 text-zinc-400 text-left">
                         <tr>
-                            <th class="p-2">Cuenta</th>
+                            <th class="p-2">Tesorería</th>
                             <th class="p-2">Moneda</th>
                             <th class="p-2 text-right">Entradas</th>
                             <th class="p-2 text-right">Salidas</th>
@@ -269,19 +445,30 @@
                         {#each movements as m (m.account_id)}
                             <tr class="border-t border-zinc-800">
                                 <td class="p-2">
-                                    {m.account_name} ({m.account_number})
+                                    <div class="flex items-center gap-2">
+                                        <span
+                                            class="w-2 h-2 rounded-full shrink-0"
+                                            style:background-color={m.color ??
+                                                "#71717a"}
+                                        ></span>
+                                        {m.account_name} ({m.account_number})
+                                    </div>
                                 </td>
                                 <td class="p-2">{m.currency}</td>
                                 <td class="p-2 text-right text-green-400">
-                                    {fmt(m.total_deposits + m.total_transfers_in)}
+                                    {fmt(
+                                        m.total_deposits + m.total_transfers_in,
+                                    )}
                                 </td>
                                 <td class="p-2 text-right text-red-400">
                                     {fmt(
-                                        m.total_withdrawals + m.total_transfers_out,
+                                        m.total_withdrawals +
+                                            m.total_transfers_out,
                                     )}
                                 </td>
                                 <td
-                                    class="p-2 text-right font-bold {m.balance >= 0
+                                    class="p-2 text-right font-bold {m.balance >=
+                                    0
                                         ? 'text-green-400'
                                         : 'text-red-400'}"
                                 >
@@ -330,21 +517,58 @@
                 </button>
             </div>
             <ExportButtons
-                title="Saldo mensual {MONTH_NAMES[selectedMonth - 1]} {selectedYear}"
+                title="Saldo mensual {MONTH_NAMES[
+                    selectedMonth - 1
+                ]} {selectedYear}"
                 data={monthly}
                 columns={monthlyColumns}
-                filename="saldo-mensual-{selectedYear}-{String(selectedMonth).padStart(2, '0')}"
+                filename="saldo-mensual-{selectedYear}-{String(
+                    selectedMonth,
+                ).padStart(2, '0')}"
             />
         </div>
 
-        <div class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+        <div
+            class="flex flex-wrap gap-3 rounded-lg border border-zinc-800 bg-zinc-900/70 p-3"
+        >
+            <button
+                type="button"
+                class={`rounded-md border px-3 py-1 text-sm transition-colors ${exactMatchEnabled ? "border-amber-500 bg-amber-500/15 text-amber-400" : "border-zinc-700 bg-zinc-800 text-zinc-300"}`}
+                onclick={() => {
+                    exactMatchEnabled = !exactMatchEnabled;
+                    applyMonthlyFilters();
+                }}
+            >
+                {exactMatchEnabled
+                    ? "Coincidencia exacta: ON"
+                    : "Coincidencia exacta: OFF"}
+            </button>
+            <input
+                class="min-w-44 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
+                placeholder="Tesorería"
+                bind:value={monthlyFilters.account}
+                oninput={applyMonthlyFilters}
+            />
+            <input
+                class="min-w-28 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
+                placeholder="Moneda"
+                bind:value={monthlyFilters.currency}
+                oninput={applyMonthlyFilters}
+            />
+        </div>
+
+        <div
+            class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden"
+        >
             {#if loading}
                 <p class="p-4 text-zinc-400">Cargando...</p>
             {:else if monthly.length === 0}
-                <p class="p-4 text-zinc-400">No hay cuentas</p>
+                <p class="p-4 text-zinc-400">No hay tesorerías</p>
             {:else}
                 {#if !monthly[0].month_finished}
-                    <p class="p-2 text-xs text-zinc-500 border-b border-zinc-800">
+                    <p
+                        class="p-2 text-xs text-zinc-500 border-b border-zinc-800"
+                    >
                         El mes aún no ha finalizado — el saldo final corresponde
                         al día de hoy ({monthly[0].period_end}).
                     </p>
@@ -352,7 +576,7 @@
                 <table class="w-full text-sm">
                     <thead class="bg-zinc-800/50 text-zinc-400 text-left">
                         <tr>
-                            <th class="p-2">Cuenta</th>
+                            <th class="p-2">Tesorería</th>
                             <th class="p-2">Moneda</th>
                             <th class="p-2 text-right">Saldo inicial</th>
                             <th class="p-2 text-right">Saldo final</th>
@@ -384,7 +608,9 @@
                                         ? 'text-green-400'
                                         : 'text-red-400'}"
                                 >
-                                    {m.net_change >= 0 ? "+" : ""}{fmt(m.net_change)}
+                                    {m.net_change >= 0 ? "+" : ""}{fmt(
+                                        m.net_change,
+                                    )}
                                 </td>
                             </tr>
                         {/each}

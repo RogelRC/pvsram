@@ -10,8 +10,69 @@
     let loading = $state(false);
     let error = $state<string | null>(null);
 
+    let allByCurrency = $state<CurrencyStats[]>([]);
+    let allByAccount = $state<AccountStats[]>([]);
     let byCurrency = $state<CurrencyStats[]>([]);
     let byAccount = $state<AccountStats[]>([]);
+    let filters = $state({
+        account: "",
+        currency: "",
+    });
+
+    function normalizeText(value: string | null | undefined): string {
+        return (value ?? "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase();
+    }
+
+    function buildCurrencyStats(accounts: AccountStats[]): CurrencyStats[] {
+        const groups = new Map<string, CurrencyStats>();
+
+        for (const account of accounts) {
+            const existing = groups.get(account.currency) ?? {
+                currency: account.currency,
+                account_count: 0,
+                total_balance: 0,
+                total_deposits: 0,
+                total_withdrawals: 0,
+                total_transferred: 0,
+                transaction_count: 0,
+            };
+
+            existing.account_count += 1;
+            existing.total_balance += account.balance;
+            existing.total_deposits += account.total_deposits;
+            existing.total_withdrawals += account.total_withdrawals;
+            existing.total_transferred +=
+                account.total_transfers_in + account.total_transfers_out;
+            existing.transaction_count += account.transaction_count;
+            groups.set(account.currency, existing);
+        }
+
+        return Array.from(groups.values()).sort((a, b) =>
+            a.currency.localeCompare(b.currency),
+        );
+    }
+
+    function applyFilters() {
+        const normalizedAccount = normalizeText(filters.account);
+        const normalizedCurrency = normalizeText(filters.currency);
+
+        const filteredAccounts = allByAccount.filter((account) => {
+            const accountText = `${account.account_name} ${account.account_number}`;
+            const matchesAccount =
+                !normalizedAccount ||
+                normalizeText(accountText).includes(normalizedAccount);
+            const matchesCurrency =
+                !normalizedCurrency ||
+                normalizeText(account.currency).includes(normalizedCurrency);
+            return matchesAccount && matchesCurrency;
+        });
+
+        byAccount = filteredAccounts;
+        byCurrency = buildCurrencyStats(filteredAccounts);
+    }
 
     async function loadData() {
         loading = true;
@@ -21,8 +82,9 @@
                 getStatsByCurrency(),
                 getStatsByAccount(),
             ]);
-            byCurrency = currencyStats;
-            byAccount = accountStats;
+            allByCurrency = currencyStats;
+            allByAccount = accountStats;
+            applyFilters();
         } catch (e) {
             console.error("Error cargando estadísticas:", e);
             if (e instanceof Error) {
@@ -57,6 +119,23 @@
     {#if loading}
         <p class="text-zinc-400">Cargando...</p>
     {:else}
+        <div
+            class="flex flex-wrap gap-3 rounded-lg border border-zinc-800 bg-zinc-900/70 p-3"
+        >
+            <input
+                class="min-w-44 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
+                placeholder="Tesorería"
+                bind:value={filters.account}
+                oninput={applyFilters}
+            />
+            <input
+                class="min-w-28 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
+                placeholder="Moneda"
+                bind:value={filters.currency}
+                oninput={applyFilters}
+            />
+        </div>
+
         <!-- Por moneda -->
         <section class="flex flex-col gap-3">
             <h2 class="text-lg font-semibold text-zinc-300">Por moneda</h2>
@@ -71,7 +150,8 @@
                             <div class="flex justify-between items-center">
                                 <h3 class="text-xl font-bold">{c.currency}</h3>
                                 <span class="text-sm text-zinc-400"
-                                    >{c.account_count} cuenta{c.account_count === 1
+                                    >{c.account_count} tesorería{c.account_count ===
+                                    1
                                         ? ""
                                         : "s"}</span
                                 >
@@ -117,9 +197,9 @@
             {/if}
         </section>
 
-        <!-- Por cuenta -->
+        <!-- Por tesorería -->
         <section class="flex flex-col gap-3">
-            <h2 class="text-lg font-semibold text-zinc-300">Por cuenta</h2>
+            <h2 class="text-lg font-semibold text-zinc-300">Por tesorería</h2>
             {#if byAccount.length === 0}
                 <p class="text-zinc-400 text-sm">No hay datos</p>
             {:else}
@@ -127,19 +207,14 @@
                     class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden"
                 >
                     <table class="w-full text-sm">
-                        <thead
-                            class="bg-zinc-800/50 text-zinc-400 text-left"
-                        >
+                        <thead class="bg-zinc-800/50 text-zinc-400 text-left">
                             <tr>
-                                <th class="p-2">Cuenta</th>
+                                <th class="p-2">Tesorería</th>
                                 <th class="p-2">Moneda</th>
                                 <th class="p-2 text-right">Ingresos</th>
                                 <th class="p-2 text-right">Extracciones</th>
-                                <th class="p-2 text-right"
-                                    >Transf. enviadas</th
-                                >
-                                <th class="p-2 text-right"
-                                    >Transf. recibidas</th
+                                <th class="p-2 text-right">Transf. enviadas</th>
+                                <th class="p-2 text-right">Transf. recibidas</th
                                 >
                                 <th class="p-2 text-right">Balance</th>
                                 <th class="p-2 text-right">Operaciones</th>
@@ -174,8 +249,7 @@
                                     <td class="p-2 text-right font-bold"
                                         >{fmt(a.balance)}</td
                                     >
-                                    <td
-                                        class="p-2 text-right text-zinc-400"
+                                    <td class="p-2 text-right text-zinc-400"
                                         >{a.transaction_count}</td
                                     >
                                 </tr>

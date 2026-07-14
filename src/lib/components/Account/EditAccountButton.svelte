@@ -65,9 +65,9 @@
 
 <button
     onclick={menu}
-    class="border rounded-md p-1 hover:bg-zinc-700 border-zinc-800"
+    class="w-full text-left px-3 py-2 rounded hover:bg-red-600/10 text-red-400"
 >
-    <Pencil />
+    Editar cuenta
 </button>
 {#if isOpen}
     <div
@@ -109,7 +109,7 @@
                 />
             </div>
             <div class="flex items-center gap-2">
-                <span>Descripción:</span>
+                <span>Destino:</span>
                 <input
                     class="p-1 w-full bg-zinc-800 rounded-md"
                     type="text"
@@ -118,7 +118,7 @@
                 />
             </div>
             <div class="flex items-center gap-2">
-                <span>Propietario:</span>
+                <span>Comentario:</span>
                 <input
                     class="p-1 w-full bg-zinc-800 rounded-md"
                     type="text"
