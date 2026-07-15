@@ -347,7 +347,7 @@
                 </thead>
                 <tbody>
                     {#each transactions as t (t.id)}
-                        <tr class="border-t border-zinc-800">
+                        <tr class="border-t border-zinc-800 hover:bg-zinc-800">
                             <td class="p-2">
                                 <div class="flex items-center gap-2">
                                     <span

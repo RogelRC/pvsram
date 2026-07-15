@@ -143,7 +143,7 @@
         />
         <input
             class="min-w-36 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
-            placeholder="Propietario"
+            placeholder="Comentario"
             bind:value={filters.owner}
             oninput={applyFilters}
         />

@@ -124,12 +124,14 @@
         <div
             class="flex flex-col bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl p-4 min-w-120 gap-4"
         >
-            <div class="flex justify-between border-b items-center pb-2">
+            <div
+                class="flex justify-between border-b border-zinc-700 items-center pb-2"
+            >
                 <h3 class="text-2xl font-bold">Editar operación</h3>
                 <button
                     type="button"
                     onclick={menu}
-                    class="flex items-center justify-items-center border rounded-lg bg-white/10 hover:bg-white/20 p-2"
+                    class="border rounded-md p-1 hover:bg-zinc-700 border-zinc-800 flex items-center gap-2 px-3"
                 >
                     <X />
                 </button>
@@ -150,7 +152,7 @@
             </div>
 
             <div class="flex items-center gap-2">
-                <span>Cuenta:</span>
+                <span>Tesorería:</span>
                 <input
                     class="p-1 w-full bg-zinc-800/50 rounded-md text-zinc-400 cursor-not-allowed"
                     type="text"
@@ -208,7 +210,7 @@
             </div>
 
             <div class="flex items-center gap-2">
-                <span>Descripción:</span>
+                <span>Comentario:</span>
                 <input
                     class="p-1 w-full bg-zinc-800 rounded-md"
                     type="text"
@@ -224,7 +226,7 @@
                     disabled={saving ||
                         (transaction.type === "transfer" &&
                             otherAccounts.length === 0)}
-                    class="flex items-center justify-items-center border rounded-lg bg-white/10 hover:bg-white/20 p-2 disabled:opacity-50"
+                    class="border rounded-md p-1 hover:bg-zinc-700 border-zinc-800 flex items-center gap-2 px-3"
                 >
                     <span class="mr-2"
                         >{saving ? "Guardando..." : "Guardar"}</span

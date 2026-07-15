@@ -115,10 +115,10 @@
 
 <button
     onclick={menu}
-    class="flex items-center justify-items-center border rounded-lg bg-white/10 hover:bg-white/20 p-2"
+    class="border rounded-md p-1 hover:bg-zinc-700 border-zinc-800 flex items-center gap-2 px-3"
 >
-    <span class="mr-2">Nueva cuenta</span>
     <Plus />
+    <span class="mr-2">Nueva tesorería</span>
 </button>
 {#if isOpen}
     <div
@@ -127,11 +127,13 @@
         <div
             class="flex flex-col bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl p-4 min-w-120 gap-4"
         >
-            <div class="flex justify-between border-b items-center pb-2">
-                <h3 class="text-2xl font-bold">Nueva cuenta</h3>
+            <div
+                class="flex justify-between border-b border-zinc-700 items-center pb-2"
+            >
+                <h3 class="text-2xl font-bold">Nueva tesorería</h3>
                 <button
                     onclick={menu}
-                    class="flex items-center justify-items-center border rounded-lg bg-white/10 hover:bg-white/20 p-2"
+                    class="border rounded-md p-1 hover:bg-zinc-700 border-zinc-800 flex items-center gap-2 px-3"
                 >
                     <X />
                 </button>
@@ -224,7 +226,7 @@
                 <button
                     onclick={handleSave}
                     disabled={saving}
-                    class="flex items-center justify-items-center border rounded-lg bg-white/10 hover:bg-white/20 p-2 disabled:opacity-50"
+                    class="border rounded-md p-1 hover:bg-zinc-700 border-zinc-800 flex items-center gap-2 px-3"
                 >
                     <span class="mr-2"
                         >{saving ? "Guardando..." : "Guardar"}</span

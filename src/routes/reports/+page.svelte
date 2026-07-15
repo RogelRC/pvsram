@@ -265,7 +265,8 @@
             <button
                 type="button"
                 onclick={() => selectTab(t.value)}
-                class="border rounded-lg p-2 transition-colors {tab === t.value
+                class="border rounded-md p-1 hover:bg-zinc-700 border-zinc-800 flex items-center gap-2 px-3 {tab ===
+                t.value
                     ? 'bg-white/20 border-white/30'
                     : 'bg-white/5 border-zinc-800 hover:bg-white/10'}"
             >
@@ -334,7 +335,9 @@
                     </thead>
                     <tbody>
                         {#each balances as b (b.account_id)}
-                            <tr class="border-t border-zinc-800">
+                            <tr
+                                class="border-t border-zinc-800 hover:bg-zinc-800"
+                            >
                                 <td class="p-2">
                                     <div class="flex items-center gap-2">
                                         <span
@@ -443,7 +446,9 @@
                     </thead>
                     <tbody>
                         {#each movements as m (m.account_id)}
-                            <tr class="border-t border-zinc-800">
+                            <tr
+                                class="border-t border-zinc-800 hover:bg-zinc-800"
+                            >
                                 <td class="p-2">
                                     <div class="flex items-center gap-2">
                                         <span
@@ -585,7 +590,9 @@
                     </thead>
                     <tbody>
                         {#each monthly as m (m.account_id)}
-                            <tr class="border-t border-zinc-800">
+                            <tr
+                                class="border-t border-zinc-800 hover:bg-zinc-800"
+                            >
                                 <td class="p-2">
                                     <div class="flex items-center gap-2">
                                         <span

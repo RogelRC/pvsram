@@ -9,6 +9,7 @@ use commands::account::{
 use commands::auth::{
     change_password, has_password, is_authenticated, login, logout, set_initial_password,
 };
+use commands::database::{export_database, import_database};
 use commands::transaction::{
     count_transactions_report, create_deposit, create_transfer, create_withdrawal,
     delete_transaction, get_account_balance, get_monthly_balance_report, get_movements_report,
@@ -66,7 +67,9 @@ pub fn run() {
             login,
             logout,
             is_authenticated,
-            change_password
+            change_password,
+            export_database,
+            import_database
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

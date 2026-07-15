@@ -61,7 +61,7 @@
     <span class="mb-3">{account.description}</span>
     <span>Número de cuenta</span>
     <span class="mb-3">{account.number}</span>
-    <span>Propietario</span>
+    <span>Comentario</span>
     <span class="mb-3">{account.owner}</span>
     <div class="flex justify-between">
         <div>
