@@ -371,7 +371,7 @@
                                         style:background-color={t.color ??
                                             "#71717a"}
                                     ></span>
-                                    {t.account_name} ({t.account_number})
+                                    ({t.account_number}) {t.account_name}
                                 </div>
                             </td>
                             <td class="p-2 whitespace-nowrap"

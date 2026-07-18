@@ -345,7 +345,7 @@
                                             style:background-color={b.color ??
                                                 "#71717a"}
                                         ></span>
-                                        {b.account_name} ({b.account_number})
+                                        ({b.account_number}) {b.account_name}
                                     </div>
                                 </td>
                                 <td class="p-2">{b.currency}</td>
@@ -456,7 +456,7 @@
                                             style:background-color={m.color ??
                                                 "#71717a"}
                                         ></span>
-                                        {m.account_name} ({m.account_number})
+                                        ({m.account_number}) {m.account_name}
                                     </div>
                                 </td>
                                 <td class="p-2">{m.currency}</td>
@@ -600,7 +600,7 @@
                                             style:background-color={m.color ??
                                                 "#71717a"}
                                         ></span>
-                                        {m.account_name} ({m.account_number})
+                                        ({m.account_number}) {m.account_name}
                                     </div>
                                 </td>
                                 <td class="p-2">{m.currency}</td>

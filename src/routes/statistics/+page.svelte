@@ -232,7 +232,7 @@
                                                 style:background-color={a.color ??
                                                     "#71717a"}
                                             ></span>
-                                            {a.account_name} ({a.account_number})
+                                            ({a.account_number}) {a.account_name}
                                         </div>
                                     </td>
                                     <td class="p-2">{a.currency}</td>
