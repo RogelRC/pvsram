@@ -58,11 +58,11 @@
         style:background-color={account.color}
     ></div>
     <h3 class="font-bold text-l">{account.name}</h3>
-    <span class="mb-3">{account.description}</span>
+    <span class="mb-3">{account.destination}</span>
     <span>Número de cuenta</span>
     <span class="mb-3">{account.number}</span>
     <span>Comentario</span>
-    <span class="mb-3">{account.owner}</span>
+    <span class="mb-3">{account.comment}</span>
     <div class="flex justify-between">
         <div>
             <span>Saldo actual</span>

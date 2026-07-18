@@ -51,7 +51,7 @@
 
     async function loadFromTransaction() {
         amount = transaction.amount;
-        description = transaction.description ?? "";
+        description = transaction.comment ?? "";
         occurredAt = toDatetimeLocal(transaction.occurred_at);
         relatedAccountId = transaction.related_account_id;
         error = null;
@@ -96,7 +96,7 @@
                 relatedAccountId:
                     transaction.type === "transfer" ? relatedAccountId : null,
                 amount: parsedAmount,
-                description: description.trim() || null,
+                comment: description.trim() || null,
                 occurredAt: toOccurredAt(occurredAt),
             });
             onUpdated?.();

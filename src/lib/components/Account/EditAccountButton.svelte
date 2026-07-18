@@ -11,8 +11,8 @@
     let error = $state<string | null>(null);
 
     let name = $state("");
-    let description = $state("");
-    let owner = $state("");
+    let destination = $state("");
+    let comment = $state("");
     let color = $state("#a1a1aa");
 
     function menu() {
@@ -27,8 +27,8 @@
 
     function loadFromAccount() {
         name = account.name;
-        description = account.description ?? "";
-        owner = account.owner;
+        destination = account.destination ?? "";
+        comment = account.comment;
         color = account.color ?? "#a1a1aa";
         error = null;
         saving = false;
@@ -37,7 +37,7 @@
     async function handleSave() {
         error = null;
 
-        if (!name.trim() || !owner.trim()) {
+        if (!name.trim() || !comment.trim()) {
             error = "Nombre y propietario son obligatorios";
             return;
         }
@@ -48,8 +48,8 @@
                 id: account.id,
                 number: account.number,
                 name: name.trim(),
-                description: description.trim() || null,
-                owner: owner.trim(),
+                destination: destination.trim() || null,
+                comment: comment.trim(),
                 currency: account.currency,
                 color,
             });
@@ -115,7 +115,7 @@
                 <input
                     class="p-1 w-full bg-zinc-800 rounded-md"
                     type="text"
-                    bind:value={description}
+                    bind:value={destination}
                     disabled={saving}
                 />
             </div>
@@ -124,7 +124,7 @@
                 <input
                     class="p-1 w-full bg-zinc-800 rounded-md"
                     type="text"
-                    bind:value={owner}
+                    bind:value={comment}
                     disabled={saving}
                 />
             </div>

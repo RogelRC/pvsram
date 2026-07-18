@@ -22,7 +22,8 @@
     let filters = $state({
         account: "",
         destination: "",
-        description: "",
+        concept: "",
+        comment: "",
         type: "",
         currency: "",
         minAmount: "",
@@ -81,7 +82,8 @@
         const normalized = {
             account: normalizeText(filters.account),
             destination: normalizeText(filters.destination),
-            description: normalizeText(filters.description),
+            concept: normalizeText(filters.concept),
+            comment: normalizeText(filters.comment),
             currency: normalizeText(filters.currency),
         };
 
@@ -126,11 +128,14 @@
                 return false;
             }
             if (
-                normalized.description &&
-                !matchesText(
-                    transaction.description ?? "",
-                    normalized.description,
-                )
+                normalized.concept &&
+                !matchesText(transaction.concept_name ?? "", normalized.concept)
+            ) {
+                return false;
+            }
+            if (
+                normalized.comment &&
+                !matchesText(transaction.comment ?? "", normalized.comment)
             ) {
                 return false;
             }
@@ -219,8 +224,12 @@
                     : "—",
         },
         {
-            header: "Descripción",
-            accessor: (t) => t.description ?? "—",
+            header: "Concepto",
+            accessor: (t) => t.concept_name ?? "—",
+        },
+        {
+            header: "Comentario",
+            accessor: (t) => t.comment ?? "—",
         },
         {
             header: "Monto",
@@ -268,8 +277,14 @@
             />
             <input
                 class="min-w-40 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
-                placeholder="Descripción"
-                bind:value={filters.description}
+                placeholder="Concepto"
+                bind:value={filters.concept}
+                oninput={applyFilters}
+            />
+            <input
+                class="min-w-40 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
+                placeholder="Comentario"
+                bind:value={filters.comment}
                 oninput={applyFilters}
             />
             <select
@@ -340,7 +355,8 @@
                         <th class="p-2">Fecha</th>
                         <th class="p-2">Tipo</th>
                         <th class="p-2">Destino</th>
-                        <th class="p-2">Descripción</th>
+                        <th class="p-2">Concepto</th>
+                        <th class="p-2">Comentario</th>
                         <th class="p-2 text-right">Monto</th>
                         <th class="p-2 text-right">Acciones</th>
                     </tr>
@@ -375,8 +391,10 @@
                                     ? `${t.related_account_name} (${t.related_account_number})`
                                     : "—"}
                             </td>
-                            <td class="p-2 text-zinc-400"
-                                >{t.description ?? "—"}</td
+                            <td class="p-2 text-zinc-300"
+                                >{t.concept_name ?? "—"}</td
+                            >
+                            <td class="p-2 text-zinc-400">{t.comment ?? "—"}</td
                             >
                             <td class="p-2 text-right font-medium">
                                 {formatAmount(t.amount, t.currency)}

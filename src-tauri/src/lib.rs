@@ -9,6 +9,7 @@ use commands::account::{
 use commands::auth::{
     change_password, has_password, is_authenticated, login, logout, set_initial_password,
 };
+use commands::concept::{create_concept, ensure_concept, list_concepts};
 use commands::database::{export_database, import_database};
 use commands::transaction::{
     count_transactions_report, create_deposit, create_transfer, create_withdrawal,
@@ -50,6 +51,9 @@ pub fn run() {
             create_deposit,
             create_withdrawal,
             create_transfer,
+            list_concepts,
+            create_concept,
+            ensure_concept,
             list_transactions,
             get_transaction,
             delete_transaction,
