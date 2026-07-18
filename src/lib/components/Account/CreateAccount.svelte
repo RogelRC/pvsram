@@ -97,8 +97,8 @@
             await createAccount({
                 number: number.trim(),
                 name: name.trim(),
-                description: description.trim() || null,
-                owner: owner.trim(),
+                destination: description.trim() || null,
+                comment: owner.trim(),
                 currency,
                 color,
             });

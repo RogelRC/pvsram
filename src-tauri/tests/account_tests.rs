@@ -30,7 +30,7 @@ async fn test_create_account() {
     .expect("create_account failed");
     assert_eq!(account.number, "ACC-001");
     assert_eq!(account.name, "Cuenta principal");
-    assert_eq!(account.owner, "Rogel");
+    assert_eq!(account.comment, "Rogel");
     assert_eq!(account.currency, "USD");
     assert_eq!(account.color, Some("#FF0000".to_string()));
 }

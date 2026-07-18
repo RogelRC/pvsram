@@ -6,7 +6,7 @@ export interface Transaction {
     account_id: number;
     related_account_id: number | null;
     amount: number;
-    description: string | null;
+    comment: string | null;
     occurred_at: string;
     created_at: string;
     updated_at: string;
@@ -15,28 +15,32 @@ export interface Transaction {
 export function createDeposit(params: {
     accountId: number;
     amount: number;
-    description?: string | null;
+    comment?: string | null;
     occurredAt?: string | null;
+    conceptId?: number | null;
 }): Promise<Transaction> {
     return invoke("create_deposit", {
         accountId: params.accountId,
         amount: params.amount,
-        description: params.description ?? null,
+        comment: params.comment ?? null,
         occurredAt: params.occurredAt ?? null,
+        conceptId: params.conceptId ?? null,
     });
 }
 
 export function createWithdrawal(params: {
     accountId: number;
     amount: number;
-    description?: string | null;
+    comment?: string | null;
     occurredAt?: string | null;
+    conceptId?: number | null;
 }): Promise<Transaction> {
     return invoke("create_withdrawal", {
         accountId: params.accountId,
         amount: params.amount,
-        description: params.description ?? null,
+        comment: params.comment ?? null,
         occurredAt: params.occurredAt ?? null,
+        conceptId: params.conceptId ?? null,
     });
 }
 
@@ -44,15 +48,17 @@ export function createTransfer(params: {
     accountId: number;
     relatedAccountId: number;
     amount: number;
-    description?: string | null;
+    comment?: string | null;
     occurredAt?: string | null;
+    conceptId?: number | null;
 }): Promise<Transaction> {
     return invoke("create_transfer", {
         accountId: params.accountId,
         relatedAccountId: params.relatedAccountId,
         amount: params.amount,
-        description: params.description ?? null,
+        comment: params.comment ?? null,
         occurredAt: params.occurredAt ?? null,
+        conceptId: params.conceptId ?? null,
     });
 }
 
@@ -84,7 +90,9 @@ export interface TransactionFilters {
     currency?: string | null;
     amountMin?: number | null;
     amountMax?: number | null;
-    description?: string | null;
+    comment?: string | null;
+    concept?: string | null;
+    conceptId?: number | null;
     from?: string | null;
     to?: string | null;
     sortBy?: "occurred_at" | "amount" | null;
@@ -100,6 +108,8 @@ export interface TransactionRecord extends Transaction {
     related_account_name: string | null;
     related_account_number: string | null;
     color: string | null;
+    concept_id: number | null;
+    concept_name: string | null;
 }
 
 export interface TransactionStats {
@@ -131,14 +141,14 @@ export function updateTransaction(params: {
     id: number;
     relatedAccountId?: number | null;
     amount: number;
-    description?: string | null;
+    comment?: string | null;
     occurredAt: string;
 }): Promise<Transaction> {
     return invoke("update_transaction", {
         id: params.id,
         relatedAccountId: params.relatedAccountId ?? null,
         amount: params.amount,
-        description: params.description ?? null,
+        comment: params.comment ?? null,
         occurredAt: params.occurredAt,
     });
 }

@@ -1,16 +1,24 @@
 <script lang="ts">
-    import { ArrowLeftRight, X, Save } from "lucide-svelte";
+    import { ArrowLeftRight, X, Save, ArrowLeft } from "lucide-svelte";
     import {
         createDeposit,
         createWithdrawal,
         createTransfer,
     } from "$lib/services/transactions";
     import { listAccounts, type Account } from "$lib/services/accounts";
+    import {
+        ensureConcept,
+        listConcepts,
+        type Concept,
+        type ConceptType,
+    } from "$lib/services/concepts";
 
     let { account, onCreated }: { account: Account; onCreated?: () => void } =
         $props();
 
-    type OperationType = "deposit" | "withdrawal" | "transfer";
+    type OperationType = ConceptType;
+
+    const CUSTOM_OPTION = "__custom__";
 
     let isOpen = $state(false);
     let saving = $state(false);
@@ -18,10 +26,15 @@
 
     let operation = $state<OperationType>("deposit");
     let amount = $state<number | string>("");
-    let description = $state("");
+    let comment = $state("");
 
     let otherAccounts = $state<Account[]>([]);
     let relatedAccountId = $state<number | null>(null);
+
+    let availableConcepts = $state<Concept[]>([]);
+    let selectedConceptId = $state<number | null>(null);
+    let isCustomConcept = $state(false);
+    let customConcept = $state("");
 
     const OPERATIONS: { value: OperationType; label: string }[] = [
         { value: "deposit", label: "Ingreso" },
@@ -32,8 +45,8 @@
     async function menu() {
         isOpen = !isOpen;
         if (isOpen) {
-            await loadOtherAccounts();
             resetForm();
+            await Promise.all([loadOtherAccounts(), loadConcepts("deposit")]);
         } else {
             error = null;
             saving = false;
@@ -55,17 +68,74 @@
         }
     }
 
+    async function loadConcepts(op: OperationType) {
+        try {
+            availableConcepts = await listConcepts({
+                accountId: account.id,
+                conceptType: op,
+                activeOnly: true,
+            });
+            selectedConceptId = availableConcepts[0]?.id ?? null;
+            // Si no hay conceptos, entrar en modo "agregar otro"
+            isCustomConcept = availableConcepts.length === 0;
+            customConcept = "";
+        } catch (e) {
+            console.error("Error cargando conceptos:", e);
+            availableConcepts = [];
+            selectedConceptId = null;
+            isCustomConcept = true;
+            customConcept = "";
+        }
+    }
+
     function resetForm() {
         operation = "deposit";
         amount = "";
-        description = "";
+        comment = "";
         error = null;
         saving = false;
+        availableConcepts = [];
+        selectedConceptId = null;
+        isCustomConcept = false;
+        customConcept = "";
     }
 
-    function selectOperation(op: OperationType) {
+    async function selectOperation(op: OperationType) {
         operation = op;
         error = null;
+        await loadConcepts(op);
+    }
+
+    function onConceptSelect(e: Event) {
+        const value = (e.target as HTMLSelectElement).value;
+        if (value === CUSTOM_OPTION) {
+            isCustomConcept = true;
+            customConcept = "";
+        } else {
+            selectedConceptId = Number(value);
+        }
+    }
+
+    function backToConceptSelect() {
+        isCustomConcept = false;
+        customConcept = "";
+        if (availableConcepts.length > 0 && selectedConceptId == null) {
+            selectedConceptId = availableConcepts[0].id;
+        }
+    }
+
+    async function resolveConceptId(): Promise<number | null> {
+        if (isCustomConcept) {
+            const name = customConcept.trim();
+            if (!name) return null;
+            const concept = await ensureConcept({
+                accountId: account.id,
+                conceptType: operation,
+                name,
+            });
+            return concept.id;
+        }
+        return selectedConceptId;
     }
 
     async function handleSave() {
@@ -80,29 +150,45 @@
             error = "Selecciona una cuenta destino";
             return;
         }
+        if (isCustomConcept && !customConcept.trim()) {
+            error = "Debes indicar un concepto";
+            return;
+        }
+        if (!isCustomConcept && selectedConceptId == null) {
+            error = "Selecciona un concepto";
+            return;
+        }
 
         saving = true;
         try {
-            const desc = description.trim() || null;
+            const desc = comment.trim() || null;
+            const conceptId = await resolveConceptId();
+            if (conceptId == null) {
+                error = "Debes indicar un concepto";
+                return;
+            }
 
             if (operation === "deposit") {
                 await createDeposit({
                     accountId: account.id,
                     amount: parsedAmount,
-                    description: desc,
+                    comment: desc,
+                    conceptId,
                 });
             } else if (operation === "withdrawal") {
                 await createWithdrawal({
                     accountId: account.id,
                     amount: parsedAmount,
-                    description: desc,
+                    comment: desc,
+                    conceptId,
                 });
             } else {
                 await createTransfer({
                     accountId: account.id,
                     relatedAccountId: relatedAccountId!,
                     amount: parsedAmount,
-                    description: desc,
+                    comment: desc,
+                    conceptId,
                 });
             }
 
@@ -195,6 +281,42 @@
             {/if}
 
             <div class="flex items-center gap-2">
+                <span>Concepto:</span>
+                {#if isCustomConcept}
+                    {#if availableConcepts.length > 0}
+                        <button
+                            type="button"
+                            onclick={backToConceptSelect}
+                            disabled={saving}
+                            class="flex items-center justify-center border rounded-md bg-white/10 hover:bg-white/20 p-1 shrink-0"
+                            title="Volver a la lista"
+                        >
+                            <ArrowLeft size={16} />
+                        </button>
+                    {/if}
+                    <input
+                        class="p-1 w-full bg-zinc-800 rounded-md"
+                        type="text"
+                        placeholder="Nombre del concepto"
+                        bind:value={customConcept}
+                        disabled={saving}
+                    />
+                {:else}
+                    <select
+                        class="p-1 w-full bg-zinc-800 rounded-md"
+                        value={selectedConceptId ?? ""}
+                        onchange={onConceptSelect}
+                        disabled={saving}
+                    >
+                        {#each availableConcepts as concept (concept.id)}
+                            <option value={concept.id}>{concept.name}</option>
+                        {/each}
+                        <option value={CUSTOM_OPTION}>Agregar otro...</option>
+                    </select>
+                {/if}
+            </div>
+
+            <div class="flex items-center gap-2">
                 <span>Monto:</span>
                 <input
                     class="p-1 w-full bg-zinc-800 rounded-md"
@@ -211,11 +333,11 @@
             </div>
 
             <div class="flex items-center gap-2">
-                <span>Descripción:</span>
+                <span>Comentario:</span>
                 <input
                     class="p-1 w-full bg-zinc-800 rounded-md"
                     type="text"
-                    bind:value={description}
+                    bind:value={comment}
                     disabled={saving}
                 />
             </div>

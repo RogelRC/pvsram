@@ -68,7 +68,7 @@
             }
             if (
                 normalized.owner &&
-                !normalizeText(account.owner).includes(normalized.owner)
+                !normalizeText(account.comment).includes(normalized.owner)
             ) {
                 return false;
             }
@@ -80,7 +80,7 @@
             }
             if (
                 normalized.description &&
-                !normalizeText(account.description).includes(
+                !normalizeText(account.destination).includes(
                     normalized.description,
                 )
             ) {

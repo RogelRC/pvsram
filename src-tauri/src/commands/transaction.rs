@@ -1,3 +1,4 @@
+use crate::commands::concept::{link_transaction_concept_impl, validate_concept_for_operation};
 use crate::error::AppResult;
 use crate::models::transaction::Transaction;
 use crate::state::AppState;
@@ -7,13 +8,27 @@ use sqlx::{QueryBuilder, Sqlite};
 use tauri::State;
 
 const TRANSACTION_COLUMNS: &str =
-    "id, type, account_id, related_account_id, amount, description, occurred_at, created_at, updated_at";
+    "id, type, account_id, related_account_id, amount, comment, occurred_at, created_at, updated_at";
 
 fn local_timestamp() -> String {
     Local::now()
         .naive_local()
         .format("%Y-%m-%d %H:%M:%S")
         .to_string()
+}
+
+async fn attach_concept_if_any(
+    db: &SqlitePool,
+    transaction_id: i64,
+    account_id: i64,
+    operation_type: &str,
+    concept_id: Option<i64>,
+) -> AppResult<()> {
+    if let Some(concept_id) = concept_id {
+        validate_concept_for_operation(db, concept_id, account_id, operation_type).await?;
+        link_transaction_concept_impl(db, transaction_id, concept_id).await?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -32,24 +47,27 @@ pub async fn create_deposit_impl(
     db: &SqlitePool,
     account_id: i64,
     amount: f64,
-    description: Option<String>,
+    comment: Option<String>,
     occurred_at: Option<String>,
+    concept_id: Option<i64>,
 ) -> AppResult<Transaction> {
     let now = local_timestamp();
     let transaction = sqlx::query_as::<_, Transaction>(&format!(
-        "INSERT INTO transactions (type, account_id, amount, description, occurred_at, created_at, updated_at)
+        "INSERT INTO transactions (type, account_id, amount, comment, occurred_at, created_at, updated_at)
          VALUES ('deposit', ?, ?, ?, COALESCE(?, ?), ?, ?)
          RETURNING {TRANSACTION_COLUMNS}"
     ))
     .bind(account_id)
     .bind(amount)
-    .bind(description)
+    .bind(comment)
     .bind(occurred_at)
     .bind(now.clone())
     .bind(now.clone())
     .bind(now)
     .fetch_one(db)
     .await?;
+
+    attach_concept_if_any(db, transaction.id, account_id, "deposit", concept_id).await?;
 
     Ok(transaction)
 }
@@ -58,24 +76,27 @@ pub async fn create_withdrawal_impl(
     db: &SqlitePool,
     account_id: i64,
     amount: f64,
-    description: Option<String>,
+    comment: Option<String>,
     occurred_at: Option<String>,
+    concept_id: Option<i64>,
 ) -> AppResult<Transaction> {
     let now = local_timestamp();
     let transaction = sqlx::query_as::<_, Transaction>(&format!(
-        "INSERT INTO transactions (type, account_id, amount, description, occurred_at, created_at, updated_at)
+        "INSERT INTO transactions (type, account_id, amount, comment, occurred_at, created_at, updated_at)
          VALUES ('withdrawal', ?, ?, ?, COALESCE(?, ?), ?, ?)
          RETURNING {TRANSACTION_COLUMNS}"
     ))
     .bind(account_id)
     .bind(amount)
-    .bind(description)
+    .bind(comment)
     .bind(occurred_at)
     .bind(now.clone())
     .bind(now.clone())
     .bind(now)
     .fetch_one(db)
     .await?;
+
+    attach_concept_if_any(db, transaction.id, account_id, "withdrawal", concept_id).await?;
 
     Ok(transaction)
 }
@@ -85,25 +106,28 @@ pub async fn create_transfer_impl(
     account_id: i64,
     related_account_id: i64,
     amount: f64,
-    description: Option<String>,
+    comment: Option<String>,
     occurred_at: Option<String>,
+    concept_id: Option<i64>,
 ) -> AppResult<Transaction> {
     let now = local_timestamp();
     let transaction = sqlx::query_as::<_, Transaction>(&format!(
-        "INSERT INTO transactions (type, account_id, related_account_id, amount, description, occurred_at, created_at, updated_at)
+        "INSERT INTO transactions (type, account_id, related_account_id, amount, comment, occurred_at, created_at, updated_at)
          VALUES ('transfer', ?, ?, ?, ?, COALESCE(?, ?), ?, ?)
          RETURNING {TRANSACTION_COLUMNS}"
     ))
     .bind(account_id)
     .bind(related_account_id)
     .bind(amount)
-    .bind(description)
+    .bind(comment)
     .bind(occurred_at)
     .bind(now.clone())
     .bind(now.clone())
     .bind(now)
     .fetch_one(db)
     .await?;
+
+    attach_concept_if_any(db, transaction.id, account_id, "transfer", concept_id).await?;
 
     Ok(transaction)
 }
@@ -185,10 +209,19 @@ pub async fn create_deposit(
     state: State<'_, AppState>,
     account_id: i64,
     amount: f64,
-    description: Option<String>,
+    comment: Option<String>,
     occurred_at: Option<String>,
+    concept_id: Option<i64>,
 ) -> AppResult<Transaction> {
-    create_deposit_impl(&state.db, account_id, amount, description, occurred_at).await
+    create_deposit_impl(
+        &state.db,
+        account_id,
+        amount,
+        comment,
+        occurred_at,
+        concept_id,
+    )
+    .await
 }
 
 #[tauri::command]
@@ -196,10 +229,19 @@ pub async fn create_withdrawal(
     state: State<'_, AppState>,
     account_id: i64,
     amount: f64,
-    description: Option<String>,
+    comment: Option<String>,
     occurred_at: Option<String>,
+    concept_id: Option<i64>,
 ) -> AppResult<Transaction> {
-    create_withdrawal_impl(&state.db, account_id, amount, description, occurred_at).await
+    create_withdrawal_impl(
+        &state.db,
+        account_id,
+        amount,
+        comment,
+        occurred_at,
+        concept_id,
+    )
+    .await
 }
 
 #[tauri::command]
@@ -208,16 +250,18 @@ pub async fn create_transfer(
     account_id: i64,
     related_account_id: i64,
     amount: f64,
-    description: Option<String>,
+    comment: Option<String>,
     occurred_at: Option<String>,
+    concept_id: Option<i64>,
 ) -> AppResult<Transaction> {
     create_transfer_impl(
         &state.db,
         account_id,
         related_account_id,
         amount,
-        description,
+        comment,
         occurred_at,
+        concept_id,
     )
     .await
 }
@@ -263,11 +307,13 @@ pub struct TransactionFilters {
     pub currency: Option<String>,
     pub amount_min: Option<f64>,
     pub amount_max: Option<f64>,
-    pub description: Option<String>, // búsqueda parcial (LIKE)
-    pub from: Option<String>,        // occurred_at >=
-    pub to: Option<String>,          // occurred_at <=
-    pub sort_by: Option<String>,     // "occurred_at" | "amount"
-    pub sort_dir: Option<String>,    // "asc" | "desc"
+    pub comment: Option<String>,  // búsqueda parcial (LIKE)
+    pub concept: Option<String>,  // búsqueda parcial por nombre de concepto
+    pub concept_id: Option<i64>,
+    pub from: Option<String>,     // occurred_at >=
+    pub to: Option<String>,       // occurred_at <=
+    pub sort_by: Option<String>,  // "occurred_at" | "amount"
+    pub sort_dir: Option<String>, // "asc" | "desc"
     pub limit: Option<i64>,
     pub offset: Option<i64>,
 }
@@ -281,7 +327,7 @@ pub struct TransactionRecord {
     pub account_id: i64,
     pub related_account_id: Option<i64>,
     pub amount: f64,
-    pub description: Option<String>,
+    pub comment: Option<String>,
     pub occurred_at: String,
     pub created_at: String,
     pub updated_at: String,
@@ -291,6 +337,8 @@ pub struct TransactionRecord {
     pub color: Option<String>,
     pub related_account_name: Option<String>,
     pub related_account_number: Option<String>,
+    pub concept_id: Option<i64>,
+    pub concept_name: Option<String>,
 }
 
 #[derive(Debug, serde::Serialize, sqlx::FromRow)]
@@ -347,12 +395,39 @@ fn apply_filters(qb: &mut QueryBuilder<Sqlite>, f: &TransactionFilters) {
         qb.push("t.amount <= ").push_bind(amount_max);
     }
 
-    if let Some(ref desc) = f.description {
+    if let Some(ref desc) = f.comment {
         if !desc.trim().is_empty() {
             qb.push(if has_where { " AND " } else { " WHERE " });
             has_where = true;
-            qb.push("t.description LIKE ")
+            qb.push("t.comment LIKE ")
                 .push_bind(format!("%{}%", desc.trim()));
+        }
+    }
+
+    if let Some(concept_id) = f.concept_id {
+        qb.push(if has_where { " AND " } else { " WHERE " });
+        has_where = true;
+        qb.push(
+            "EXISTS (
+                SELECT 1 FROM transaction_concepts tc
+                WHERE tc.transaction_id = t.id AND tc.concept_id = ",
+        )
+        .push_bind(concept_id)
+        .push(")");
+    }
+
+    if let Some(ref concept) = f.concept {
+        if !concept.trim().is_empty() {
+            qb.push(if has_where { " AND " } else { " WHERE " });
+            has_where = true;
+            qb.push(
+                "EXISTS (
+                    SELECT 1 FROM transaction_concepts tc
+                    JOIN concepts c ON c.id = tc.concept_id
+                    WHERE tc.transaction_id = t.id AND c.name LIKE ",
+            )
+            .push_bind(format!("%{}%", concept.trim()))
+            .push(")");
         }
     }
 
@@ -375,17 +450,35 @@ const JOINED_FROM: &str = "FROM transactions t
     JOIN accounts a ON a.id = t.account_id
     LEFT JOIN accounts ra ON ra.id = t.related_account_id";
 
+/// Subconsultas para el primer concepto asociado (el flujo de creación usa uno).
+const CONCEPT_SELECT: &str = "(
+        SELECT tc.concept_id
+        FROM transaction_concepts tc
+        WHERE tc.transaction_id = t.id
+        ORDER BY tc.concept_id
+        LIMIT 1
+    ) AS concept_id,
+    (
+        SELECT c.name
+        FROM transaction_concepts tc
+        JOIN concepts c ON c.id = tc.concept_id
+        WHERE tc.transaction_id = t.id
+        ORDER BY tc.concept_id
+        LIMIT 1
+    ) AS concept_name";
+
 pub async fn list_transactions_report_impl(
     db: &SqlitePool,
     filters: &TransactionFilters,
 ) -> AppResult<Vec<TransactionRecord>> {
     let mut qb: QueryBuilder<Sqlite> = QueryBuilder::new(format!(
         "SELECT
-            t.id, t.type, t.account_id, t.related_account_id, t.amount, t.description,
+            t.id, t.type, t.account_id, t.related_account_id, t.amount, t.comment,
             t.occurred_at, t.created_at, t.updated_at,
             a.name AS account_name, a.number AS account_number, a.currency AS currency,
             a.color AS color,
-            ra.name AS related_account_name, ra.number AS related_account_number
+            ra.name AS related_account_name, ra.number AS related_account_number,
+            {CONCEPT_SELECT}
          {JOINED_FROM}"
     ));
 
@@ -836,19 +929,19 @@ pub async fn update_transaction_impl(
     id: i64,
     related_account_id: Option<i64>,
     amount: f64,
-    description: Option<String>,
+    comment: Option<String>,
     occurred_at: String,
 ) -> AppResult<Transaction> {
     let now = local_timestamp();
     let transaction = sqlx::query_as::<_, Transaction>(&format!(
         "UPDATE transactions
-         SET related_account_id = ?, amount = ?, description = ?, occurred_at = ?, updated_at = ?
+         SET related_account_id = ?, amount = ?, comment = ?, occurred_at = ?, updated_at = ?
          WHERE id = ?
          RETURNING {TRANSACTION_COLUMNS}"
     ))
     .bind(related_account_id)
     .bind(amount)
-    .bind(description)
+    .bind(comment)
     .bind(occurred_at)
     .bind(now)
     .bind(id)
@@ -864,7 +957,7 @@ pub async fn update_transaction(
     id: i64,
     related_account_id: Option<i64>,
     amount: f64,
-    description: Option<String>,
+    comment: Option<String>,
     occurred_at: String,
 ) -> AppResult<Transaction> {
     update_transaction_impl(
@@ -872,7 +965,7 @@ pub async fn update_transaction(
         id,
         related_account_id,
         amount,
-        description,
+        comment,
         occurred_at,
     )
     .await

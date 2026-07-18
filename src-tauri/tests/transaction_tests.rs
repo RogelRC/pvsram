@@ -1,4 +1,5 @@
 use pvsr_accounts_management_lib::commands::account::create_account_impl;
+use pvsr_accounts_management_lib::commands::concept::create_concept_impl;
 use pvsr_accounts_management_lib::commands::transaction::{
     create_deposit_impl, create_transfer_impl, create_withdrawal_impl, delete_transaction_impl,
     get_account_balance_impl, get_transaction_impl, list_transactions_impl,
@@ -37,10 +38,16 @@ async fn test_create_deposit() {
     let db = setup_db().await;
     let account_id = create_test_account(&db, "ACC-001").await;
 
-    let transaction =
-        create_deposit_impl(&db, account_id, 100.0, Some("Salario".to_string()), None)
-            .await
-            .expect("create_deposit failed");
+    let transaction = create_deposit_impl(
+        &db,
+        account_id,
+        100.0,
+        Some("Salario".to_string()),
+        None,
+        None,
+    )
+    .await
+    .expect("create_deposit failed");
 
     assert_eq!(transaction.r#type, "deposit");
     assert_eq!(transaction.account_id, account_id);
@@ -49,14 +56,55 @@ async fn test_create_deposit() {
 }
 
 #[tokio::test]
+async fn test_create_deposit_with_concept() {
+    let db = setup_db().await;
+    let account_id = create_test_account(&db, "ACC-001").await;
+    let concept = create_concept_impl(
+        &db,
+        account_id,
+        "deposit".to_string(),
+        "Salario".to_string(),
+    )
+    .await
+    .expect("create_concept failed");
+
+    let transaction = create_deposit_impl(
+        &db,
+        account_id,
+        100.0,
+        None,
+        None,
+        Some(concept.id),
+    )
+    .await
+    .expect("create_deposit with concept failed");
+
+    let linked: (i64,) = sqlx::query_as(
+        "SELECT concept_id FROM transaction_concepts WHERE transaction_id = ?",
+    )
+    .bind(transaction.id)
+    .fetch_one(&db)
+    .await
+    .expect("concept link missing");
+
+    assert_eq!(linked.0, concept.id);
+}
+
+#[tokio::test]
 async fn test_create_withdrawal() {
     let db = setup_db().await;
     let account_id = create_test_account(&db, "ACC-001").await;
 
-    let transaction =
-        create_withdrawal_impl(&db, account_id, 30.0, Some("Compras".to_string()), None)
-            .await
-            .expect("create_withdrawal failed");
+    let transaction = create_withdrawal_impl(
+        &db,
+        account_id,
+        30.0,
+        Some("Compras".to_string()),
+        None,
+        None,
+    )
+    .await
+    .expect("create_withdrawal failed");
 
     assert_eq!(transaction.r#type, "withdrawal");
     assert_eq!(transaction.account_id, account_id);
@@ -69,9 +117,10 @@ async fn test_create_transfer() {
     let account_a = create_test_account(&db, "ACC-001").await;
     let account_b = create_test_account(&db, "ACC-002").await;
 
-    let transaction = create_transfer_impl(&db, account_a, account_b, 50.0, None, None)
-        .await
-        .expect("create_transfer failed");
+    let transaction =
+        create_transfer_impl(&db, account_a, account_b, 50.0, None, None, None)
+            .await
+            .expect("create_transfer failed");
 
     assert_eq!(transaction.r#type, "transfer");
     assert_eq!(transaction.account_id, account_a);
@@ -84,7 +133,7 @@ async fn test_transfer_to_same_account_fails() {
     let db = setup_db().await;
     let account_id = create_test_account(&db, "ACC-001").await;
 
-    let result = create_transfer_impl(&db, account_id, account_id, 50.0, None, None).await;
+    let result = create_transfer_impl(&db, account_id, account_id, 50.0, None, None, None).await;
 
     assert!(result.is_err());
 }
@@ -94,7 +143,7 @@ async fn test_get_transaction() {
     let db = setup_db().await;
     let account_id = create_test_account(&db, "ACC-001").await;
 
-    let created = create_deposit_impl(&db, account_id, 100.0, None, None)
+    let created = create_deposit_impl(&db, account_id, 100.0, None, None, None)
         .await
         .unwrap();
 
@@ -111,7 +160,7 @@ async fn test_delete_transaction() {
     let db = setup_db().await;
     let account_id = create_test_account(&db, "ACC-001").await;
 
-    let created = create_deposit_impl(&db, account_id, 100.0, None, None)
+    let created = create_deposit_impl(&db, account_id, 100.0, None, None, None)
         .await
         .unwrap();
 
@@ -129,10 +178,10 @@ async fn test_list_transactions_filtered_by_account() {
     let account_a = create_test_account(&db, "ACC-001").await;
     let account_b = create_test_account(&db, "ACC-002").await;
 
-    create_deposit_impl(&db, account_a, 100.0, None, None)
+    create_deposit_impl(&db, account_a, 100.0, None, None, None)
         .await
         .unwrap();
-    create_deposit_impl(&db, account_b, 200.0, None, None)
+    create_deposit_impl(&db, account_b, 200.0, None, None, None)
         .await
         .unwrap();
 
@@ -150,7 +199,7 @@ async fn test_list_transactions_includes_transfers_for_related_account() {
     let account_a = create_test_account(&db, "ACC-001").await;
     let account_b = create_test_account(&db, "ACC-002").await;
 
-    create_transfer_impl(&db, account_a, account_b, 50.0, None, None)
+    create_transfer_impl(&db, account_a, account_b, 50.0, None, None, None)
         .await
         .unwrap();
 
@@ -173,6 +222,7 @@ async fn test_list_transactions_filtered_by_date_range() {
         100.0,
         None,
         Some("2025-01-01T00:00:00Z".to_string()),
+        None,
     )
     .await
     .unwrap();
@@ -183,6 +233,7 @@ async fn test_list_transactions_filtered_by_date_range() {
         200.0,
         None,
         Some("2025-06-01T00:00:00Z".to_string()),
+        None,
     )
     .await
     .unwrap();
@@ -205,10 +256,10 @@ async fn test_balance_deposit_and_withdrawal() {
     let db = setup_db().await;
     let account_id = create_test_account(&db, "ACC-001").await;
 
-    create_deposit_impl(&db, account_id, 100.0, None, None)
+    create_deposit_impl(&db, account_id, 100.0, None, None, None)
         .await
         .unwrap();
-    create_withdrawal_impl(&db, account_id, 30.0, None, None)
+    create_withdrawal_impl(&db, account_id, 30.0, None, None, None)
         .await
         .unwrap();
 
@@ -225,10 +276,10 @@ async fn test_balance_with_transfer_between_own_accounts() {
     let account_a = create_test_account(&db, "ACC-001").await;
     let account_b = create_test_account(&db, "ACC-002").await;
 
-    create_deposit_impl(&db, account_a, 100.0, None, None)
+    create_deposit_impl(&db, account_a, 100.0, None, None, None)
         .await
         .unwrap();
-    create_transfer_impl(&db, account_a, account_b, 40.0, None, None)
+    create_transfer_impl(&db, account_a, account_b, 40.0, None, None, None)
         .await
         .unwrap();
 
@@ -254,6 +305,7 @@ async fn test_balance_as_of_specific_date() {
         100.0,
         None,
         Some("2025-01-01T00:00:00Z".to_string()),
+        None,
     )
     .await
     .unwrap();
@@ -264,6 +316,7 @@ async fn test_balance_as_of_specific_date() {
         200.0,
         None,
         Some("2025-06-01T00:00:00Z".to_string()),
+        None,
     )
     .await
     .unwrap();
