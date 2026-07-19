@@ -30,13 +30,7 @@ pub async fn init_db(app_handle: &tauri::AppHandle) -> SqlitePool {
     // Migraciones con mejor manejo de errores
     match sqlx::migrate!("./migrations").run(&pool).await {
         Ok(_) => println!("✅ Migraciones aplicadas correctamente"),
-        Err(e) => {
-            eprintln!("❌ Error al ejecutar las migraciones: {}", e);
-            // Opcional: puedes hacer panic aquí si quieres que la app falle
-            // panic!("Migration failed: {}", e);
-
-            // O dejar que la app continúe (depende de tu caso)
-        }
+        Err(e) => panic!("❌ Error al ejecutar las migraciones: {}", e),
     }
 
     pool

@@ -213,7 +213,7 @@
     const balancesColumns: ExportColumn<AccountStats>[] = [
         {
             header: "Tesorería",
-            accessor: (a) => `${a.account_name} (${a.account_number})`,
+            accessor: (a) => `(${a.account_number}) ${a.account_name}`,
         },
         { header: "Moneda", accessor: (a) => a.currency },
         { header: "Saldo actual", accessor: (a) => a.balance.toFixed(2) },
@@ -222,7 +222,7 @@
     const movementsColumns: ExportColumn<AccountStats>[] = [
         {
             header: "Tesorería",
-            accessor: (a) => `${a.account_name} (${a.account_number})`,
+            accessor: (a) => `(${a.account_number}) ${a.account_name}`,
         },
         { header: "Moneda", accessor: (a) => a.currency },
         {
@@ -242,7 +242,7 @@
     const monthlyColumns: ExportColumn<MonthlyBalanceReport>[] = [
         {
             header: "Tesorería",
-            accessor: (m) => `${m.account_name} (${m.account_number})`,
+            accessor: (m) => `(${m.account_number}) ${m.account_name}`,
         },
         { header: "Moneda", accessor: (m) => m.currency },
         {
@@ -281,6 +281,14 @@
 
     <!-- Informe 1: saldos actuales -->
     {#if tab === "balances"}
+        <div class="flex justify-end">
+            <ExportButtons
+                title="Saldos actuales"
+                data={balances}
+                columns={balancesColumns}
+                filename="saldos-actuales"
+            />
+        </div>
         <div
             class="flex flex-wrap gap-3 rounded-lg border border-zinc-800 bg-zinc-900/70 p-3"
         >
@@ -309,14 +317,7 @@
                 oninput={applyBalanceFilters}
             />
         </div>
-        <div class="flex justify-end">
-            <ExportButtons
-                title="Saldos actuales"
-                data={balances}
-                columns={balancesColumns}
-                filename="saldos-actuales"
-            />
-        </div>
+
         <div
             class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden"
         >

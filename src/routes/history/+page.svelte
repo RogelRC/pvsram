@@ -206,7 +206,7 @@
     const exportColumns: ExportColumn<TransactionRecord>[] = [
         {
             header: "Tesorería",
-            accessor: (t) => `${t.account_name} (${t.account_number})`,
+            accessor: (t) => `(${t.account_number}) ${t.account_name}`,
         },
         {
             header: "Fecha",
@@ -246,7 +246,12 @@
     {#if error}
         <p class="text-red-400 text-sm">{error}</p>
     {/if}
-
+    <ExportButtons
+        title="Historial de operaciones"
+        data={transactions}
+        columns={exportColumns}
+        filename="historial-operaciones"
+    />
     <div
         class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-800 bg-zinc-900/70 p-3"
     >
@@ -332,12 +337,6 @@
                 onchange={applyFilters}
             />
         </div>
-        <ExportButtons
-            title="Historial de operaciones"
-            data={transactions}
-            columns={exportColumns}
-            filename="historial-operaciones"
-        />
     </div>
 
     <div class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">

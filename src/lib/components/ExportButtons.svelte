@@ -36,7 +36,7 @@
     }
 </script>
 
-<div class="flex items-center gap-2">
+<div class="flex items-center gap-2 ml-auto">
     {#if error}
         <span class="text-red-400 text-xs">{error}</span>
     {/if}
