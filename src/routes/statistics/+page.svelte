@@ -109,149 +109,149 @@
     onMount(loadData);
 </script>
 
-<main class="flex flex-col p-4 gap-6">
-    <h1 class="text-2xl font-bold">Estadísticas</h1>
+<main class="page">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Estadísticas</h1>
+            <p class="page-subtitle">
+                Resumen de saldos y flujos por moneda y tesorería
+            </p>
+        </div>
+    </div>
 
     {#if error}
-        <p class="text-red-400 text-sm">{error}</p>
+        <p
+            class="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-300"
+        >
+            {error}
+        </p>
     {/if}
 
     {#if loading}
-        <p class="text-zinc-400">Cargando...</p>
+        <p class="text-sm text-zinc-400">Cargando estadísticas…</p>
     {:else}
-        <div
-            class="flex flex-wrap gap-3 rounded-lg border border-zinc-800 bg-zinc-900/70 p-3"
-        >
+        <div class="filter-bar">
             <input
-                class="min-w-44 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
+                class="field min-w-44"
                 placeholder="Tesorería"
                 bind:value={filters.account}
                 oninput={applyFilters}
             />
             <input
-                class="min-w-28 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
+                class="field min-w-28"
                 placeholder="Moneda"
                 bind:value={filters.currency}
                 oninput={applyFilters}
             />
         </div>
 
-        <!-- Por moneda -->
         <section class="flex flex-col gap-3">
-            <h2 class="text-lg font-semibold text-zinc-300">Por moneda</h2>
+            <h2 class="text-sm font-semibold tracking-wide text-zinc-300 uppercase">
+                Por moneda
+            </h2>
             {#if byCurrency.length === 0}
-                <p class="text-zinc-400 text-sm">No hay datos</p>
+                <div class="empty-state">No hay datos</div>
             {:else}
-                <div class="grid lg:grid-cols-3 grid-cols-1 gap-4">
+                <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
                     {#each byCurrency as c (c.currency)}
-                        <div
-                            class="flex flex-col bg-[#171717] rounded-md p-4 border border-white/10 gap-2"
-                        >
-                            <div class="flex justify-between items-center">
-                                <h3 class="text-xl font-bold">{c.currency}</h3>
-                                <span class="text-sm text-zinc-400"
-                                    >{c.account_count} tesorería{c.account_count ===
+                        <div class="card flex flex-col gap-3">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-xl font-semibold text-zinc-50">
+                                    {c.currency}
+                                </h3>
+                                <span class="badge bg-zinc-800 text-zinc-400">
+                                    {c.account_count} tesorería{c.account_count ===
                                     1
                                         ? ""
-                                        : "s"}</span
-                                >
+                                        : "s"}
+                                </span>
                             </div>
                             <div>
-                                <span class="text-sm text-zinc-400"
-                                    >Balance total</span
-                                >
-                                <div class="text-2xl font-bold">
+                                <div class="label-muted">Balance total</div>
+                                <div class="mt-0.5 text-2xl font-semibold tracking-tight">
                                     {fmt(c.total_balance)}
                                 </div>
                             </div>
-                            <div class="grid grid-cols-3 gap-2 text-sm mt-2">
+                            <div class="grid grid-cols-3 gap-2 border-t border-zinc-800/80 pt-3 text-sm">
                                 <div>
-                                    <span class="text-zinc-400">Ingresos</span>
-                                    <div class="text-green-400 font-medium">
+                                    <div class="text-zinc-500">Ingresos</div>
+                                    <div class="font-medium text-emerald-400">
                                         {fmt(c.total_deposits)}
                                     </div>
                                 </div>
                                 <div>
-                                    <span class="text-zinc-400"
-                                        >Extracciones</span
-                                    >
-                                    <div class="text-red-400 font-medium">
+                                    <div class="text-zinc-500">Extracciones</div>
+                                    <div class="font-medium text-red-400">
                                         {fmt(c.total_withdrawals)}
                                     </div>
                                 </div>
                                 <div>
-                                    <span class="text-zinc-400"
-                                        >Transferido</span
-                                    >
-                                    <div class="text-blue-400 font-medium">
+                                    <div class="text-zinc-500">Transferido</div>
+                                    <div class="font-medium text-sky-400">
                                         {fmt(c.total_transferred)}
                                     </div>
                                 </div>
                             </div>
-                            <span class="text-xs text-zinc-500"
-                                >{c.transaction_count} operaciones</span
-                            >
+                            <span class="text-xs text-zinc-500">
+                                {c.transaction_count} operaciones
+                            </span>
                         </div>
                     {/each}
                 </div>
             {/if}
         </section>
 
-        <!-- Por tesorería -->
         <section class="flex flex-col gap-3">
-            <h2 class="text-lg font-semibold text-zinc-300">Por tesorería</h2>
+            <h2 class="text-sm font-semibold tracking-wide text-zinc-300 uppercase">
+                Por tesorería
+            </h2>
             {#if byAccount.length === 0}
-                <p class="text-zinc-400 text-sm">No hay datos</p>
+                <div class="empty-state">No hay datos</div>
             {:else}
-                <div
-                    class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden"
-                >
-                    <table class="w-full text-sm">
-                        <thead class="bg-zinc-800/50 text-zinc-400 text-left">
+                <div class="table-wrap overflow-x-auto">
+                    <table class="data-table">
+                        <thead>
                             <tr>
-                                <th class="p-2">Tesorería</th>
-                                <th class="p-2">Moneda</th>
-                                <th class="p-2 text-right">Ingresos</th>
-                                <th class="p-2 text-right">Extracciones</th>
-                                <th class="p-2 text-right">Transf. enviadas</th>
-                                <th class="p-2 text-right">Transf. recibidas</th
-                                >
-                                <th class="p-2 text-right">Balance</th>
-                                <th class="p-2 text-right">Operaciones</th>
+                                <th>Tesorería</th>
+                                <th>Moneda</th>
+                                <th class="text-right">Ingresos</th>
+                                <th class="text-right">Extracciones</th>
+                                <th class="text-right">Transf. enviadas</th>
+                                <th class="text-right">Transf. recibidas</th>
+                                <th class="text-right">Balance</th>
+                                <th class="text-right">Operaciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             {#each byAccount as a (a.account_id)}
-                                <tr
-                                    class="border-t border-zinc-800 hover:bg-zinc-800"
-                                >
-                                    <td class="p-2">
+                                <tr>
+                                    <td>
                                         <div class="flex items-center gap-2">
                                             <span
-                                                class="w-2 h-2 rounded-full shrink-0"
+                                                class="h-2 w-2 shrink-0 rounded-full"
                                                 style:background-color={a.color ??
                                                     "#71717a"}
                                             ></span>
                                             ({a.account_number}) {a.account_name}
                                         </div>
                                     </td>
-                                    <td class="p-2">{a.currency}</td>
-                                    <td class="p-2 text-right text-green-400"
+                                    <td>{a.currency}</td>
+                                    <td class="text-right text-emerald-400"
                                         >{fmt(a.total_deposits)}</td
                                     >
-                                    <td class="p-2 text-right text-red-400"
+                                    <td class="text-right text-red-400"
                                         >{fmt(a.total_withdrawals)}</td
                                     >
-                                    <td class="p-2 text-right text-zinc-300"
+                                    <td class="text-right text-zinc-300"
                                         >{fmt(a.total_transfers_out)}</td
                                     >
-                                    <td class="p-2 text-right text-zinc-300"
+                                    <td class="text-right text-zinc-300"
                                         >{fmt(a.total_transfers_in)}</td
                                     >
-                                    <td class="p-2 text-right font-bold"
+                                    <td class="text-right font-semibold"
                                         >{fmt(a.balance)}</td
                                     >
-                                    <td class="p-2 text-right text-zinc-400"
+                                    <td class="text-right text-zinc-400"
                                         >{a.transaction_count}</td
                                     >
                                 </tr>

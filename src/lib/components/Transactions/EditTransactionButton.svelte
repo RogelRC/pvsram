@@ -113,125 +113,137 @@
 <button
     type="button"
     onclick={menu}
-    class="border rounded-md p-1 hover:bg-zinc-700 border-zinc-800"
+    class="btn-icon"
+    title="Editar"
+    aria-label="Editar operación"
 >
-    <Pencil size={16} />
+    <Pencil size={15} />
 </button>
 {#if isOpen}
-    <div
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs"
-    >
-        <div
-            class="flex flex-col bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl p-4 min-w-120 gap-4"
-        >
+    <div class="modal-backdrop">
+        <div class="modal-panel max-w-xl">
             <div
-                class="flex justify-between border-b border-zinc-700 items-center pb-2"
+                class="flex items-center justify-between border-b border-zinc-800 pb-3"
             >
-                <h3 class="text-2xl font-bold">Editar operación</h3>
+                <h3 class="text-lg font-semibold text-zinc-50">
+                    Editar operación
+                </h3>
                 <button
                     type="button"
                     onclick={menu}
-                    class="border rounded-md p-1 hover:bg-zinc-700 border-zinc-800 flex items-center gap-2 px-3"
+                    class="btn-icon"
+                    aria-label="Cerrar"
                 >
-                    <X />
+                    <X size={16} />
                 </button>
             </div>
 
             {#if error}
-                <p class="text-red-400 text-sm">{error}</p>
-            {/if}
-
-            <div class="flex items-center gap-2">
-                <span>Tipo:</span>
-                <input
-                    class="p-1 w-full bg-zinc-800/50 rounded-md text-zinc-400 cursor-not-allowed"
-                    type="text"
-                    value={TYPE_LABELS[transaction.type] ?? transaction.type}
-                    disabled
-                />
-            </div>
-
-            <div class="flex items-center gap-2">
-                <span>Tesorería:</span>
-                <input
-                    class="p-1 w-full bg-zinc-800/50 rounded-md text-zinc-400 cursor-not-allowed"
-                    type="text"
-                    value="{transaction.account_name} ({transaction.account_number})"
-                    disabled
-                />
-            </div>
-
-            {#if transaction.type === "transfer"}
-                <div class="flex items-center gap-2">
-                    <span>Destino:</span>
-                    {#if otherAccounts.length === 0}
-                        <span class="text-sm text-zinc-400">
-                            No hay otras cuentas en {transaction.currency} disponibles
-                        </span>
-                    {:else}
-                        <select
-                            class="p-1 w-full bg-zinc-800 rounded-md"
-                            bind:value={relatedAccountId}
-                            disabled={saving}
-                        >
-                            {#each otherAccounts as acc (acc.id)}
-                                <option value={acc.id}>
-                                    {acc.name} ({acc.number}) · {acc.currency}
-                                </option>
-                            {/each}
-                        </select>
-                    {/if}
-                </div>
-            {/if}
-
-            <div class="flex items-center gap-2">
-                <span>Monto:</span>
-                <input
-                    class="p-1 w-full bg-zinc-800 rounded-md"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    bind:value={amount}
-                    disabled={saving}
-                />
-                <span class="text-sm text-zinc-400 shrink-0"
-                    >{transaction.currency}</span
+                <p
+                    class="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-300"
                 >
+                    {error}
+                </p>
+            {/if}
+
+            <div class="grid gap-3">
+                <label class="flex flex-col gap-1.5">
+                    <span class="label-muted">Tipo</span>
+                    <input
+                        class="field w-full cursor-not-allowed opacity-60"
+                        type="text"
+                        value={TYPE_LABELS[transaction.type] ?? transaction.type}
+                        disabled
+                    />
+                </label>
+
+                <label class="flex flex-col gap-1.5">
+                    <span class="label-muted">Tesorería</span>
+                    <input
+                        class="field w-full cursor-not-allowed opacity-60"
+                        type="text"
+                        value="{transaction.account_name} ({transaction.account_number})"
+                        disabled
+                    />
+                </label>
+
+                {#if transaction.type === "transfer"}
+                    <div class="flex flex-col gap-1.5">
+                        <span class="label-muted">Destino</span>
+                        {#if otherAccounts.length === 0}
+                            <span class="text-sm text-zinc-400">
+                                No hay otras cuentas en {transaction.currency} disponibles
+                            </span>
+                        {:else}
+                            <select
+                                class="field w-full"
+                                bind:value={relatedAccountId}
+                                disabled={saving}
+                            >
+                                {#each otherAccounts as acc (acc.id)}
+                                    <option value={acc.id}>
+                                        {acc.name} ({acc.number}) · {acc.currency}
+                                    </option>
+                                {/each}
+                            </select>
+                        {/if}
+                    </div>
+                {/if}
+
+                <label class="flex flex-col gap-1.5">
+                    <span class="label-muted">Monto</span>
+                    <div class="flex items-center gap-2">
+                        <input
+                            class="field w-full"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            bind:value={amount}
+                            disabled={saving}
+                        />
+                        <span
+                            class="shrink-0 rounded-md border border-zinc-800 bg-zinc-950/50 px-2 py-2 text-sm text-zinc-400"
+                        >
+                            {transaction.currency}
+                        </span>
+                    </div>
+                </label>
+
+                <label class="flex flex-col gap-1.5">
+                    <span class="label-muted">Fecha</span>
+                    <input
+                        class="field w-full"
+                        type="datetime-local"
+                        bind:value={occurredAt}
+                        disabled={saving}
+                    />
+                </label>
+
+                <label class="flex flex-col gap-1.5">
+                    <span class="label-muted">Comentario</span>
+                    <input
+                        class="field w-full"
+                        type="text"
+                        bind:value={description}
+                        disabled={saving}
+                    />
+                </label>
             </div>
 
-            <div class="flex items-center gap-2">
-                <span>Fecha:</span>
-                <input
-                    class="p-1 w-full bg-zinc-800 rounded-md"
-                    type="datetime-local"
-                    bind:value={occurredAt}
-                    disabled={saving}
-                />
-            </div>
-
-            <div class="flex items-center gap-2">
-                <span>Comentario:</span>
-                <input
-                    class="p-1 w-full bg-zinc-800 rounded-md"
-                    type="text"
-                    bind:value={description}
-                    disabled={saving}
-                />
-            </div>
-
-            <div class="flex justify-end">
+            <div class="flex justify-end gap-2 border-t border-zinc-800 pt-3">
+                <button type="button" onclick={menu} class="btn" disabled={saving}>
+                    Cancelar
+                </button>
                 <button
                     type="button"
                     onclick={handleSave}
                     disabled={saving ||
                         (transaction.type === "transfer" &&
                             otherAccounts.length === 0)}
-                    class="border rounded-md p-1 hover:bg-zinc-700 border-zinc-800 flex items-center gap-2 px-3"
+                    class="btn-primary"
                 >
-                    <span class="mr-2"
-                        >{saving ? "Guardando..." : "Guardar"}</span
-                    >
-                    <Save />
+                    <Save size={16} />
+                    <span>{saving ? "Guardando…" : "Guardar"}</span>
                 </button>
             </div>
         </div>

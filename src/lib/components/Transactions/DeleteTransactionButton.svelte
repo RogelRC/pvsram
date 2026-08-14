@@ -36,21 +36,21 @@
 {#if confirming}
     <div class="flex items-center gap-1">
         {#if error}
-            <span class="text-red-400 text-xs">{error}</span>
+            <span class="text-xs text-red-300">{error}</span>
         {/if}
         <button
             type="button"
             onclick={confirmDelete}
             disabled={deleting}
-            class="border rounded-md p-1 bg-red-500/20 hover:bg-red-500/30 border-red-800 text-red-400 text-xs px-2 disabled:opacity-50"
+            class="btn-danger px-2 py-1 text-xs"
         >
-            {deleting ? "..." : "Confirmar"}
+            {deleting ? "…" : "Confirmar"}
         </button>
         <button
             type="button"
             onclick={cancel}
             disabled={deleting}
-            class="border rounded-md p-1 hover:bg-zinc-700 border-zinc-800 text-xs px-2"
+            class="btn px-2 py-1 text-xs"
         >
             Cancelar
         </button>
@@ -59,8 +59,10 @@
     <button
         type="button"
         onclick={askConfirm}
-        class="border rounded-md p-1 hover:bg-red-500/20 hover:border-red-800 hover:text-red-400 border-zinc-800"
+        class="btn-icon hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-300"
+        title="Eliminar"
+        aria-label="Eliminar operación"
     >
-        <Trash2 size={16} />
+        <Trash2 size={15} />
     </button>
 {/if}

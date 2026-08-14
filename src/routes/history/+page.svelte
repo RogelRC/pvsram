@@ -240,182 +240,191 @@
     onMount(loadData);
 </script>
 
-<main class="flex flex-col p-4 gap-4">
-    <h1 class="text-2xl font-bold">Historial de operaciones</h1>
-
-    {#if error}
-        <p class="text-red-400 text-sm">{error}</p>
-    {/if}
-    <ExportButtons
-        title="Historial de operaciones"
-        data={transactions}
-        columns={exportColumns}
-        filename="historial-operaciones"
-    />
-    <div
-        class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-800 bg-zinc-900/70 p-3"
-    >
-        <div class="flex flex-wrap gap-3">
-            <button
-                type="button"
-                class={`rounded-md border px-3 py-1 text-sm transition-colors ${exactMatchEnabled ? "border-amber-500 bg-amber-500/15 text-amber-400" : "border-zinc-700 bg-zinc-800 text-zinc-300"}`}
-                onclick={() => {
-                    exactMatchEnabled = !exactMatchEnabled;
-                    applyFilters();
-                }}
-            >
-                {exactMatchEnabled
-                    ? "Coincidencia exacta: ON"
-                    : "Coincidencia exacta: OFF"}
-            </button>
-            <input
-                class="min-w-40 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
-                placeholder="Tesorería"
-                bind:value={filters.account}
-                oninput={applyFilters}
-            />
-            <input
-                class="min-w-40 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
-                placeholder="Destino"
-                bind:value={filters.destination}
-                oninput={applyFilters}
-            />
-            <input
-                class="min-w-40 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
-                placeholder="Concepto"
-                bind:value={filters.concept}
-                oninput={applyFilters}
-            />
-            <input
-                class="min-w-40 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
-                placeholder="Comentario"
-                bind:value={filters.comment}
-                oninput={applyFilters}
-            />
-            <select
-                class="rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
-                bind:value={filters.type}
-                onchange={applyFilters}
-            >
-                <option value="">Todos</option>
-                <option value="deposit">Ingreso</option>
-                <option value="withdrawal">Extracción</option>
-                <option value="transfer">Transferencia</option>
-            </select>
-            <input
-                class="min-w-28 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
-                placeholder="Moneda"
-                bind:value={filters.currency}
-                oninput={applyFilters}
-            />
-            <input
-                class="w-28 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
-                type="number"
-                step="0.01"
-                placeholder="Mín."
-                bind:value={filters.minAmount}
-                oninput={applyFilters}
-            />
-            <input
-                class="w-28 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
-                type="number"
-                step="0.01"
-                placeholder="Máx."
-                bind:value={filters.maxAmount}
-                oninput={applyFilters}
-            />
-            <input
-                class="rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
-                type="date"
-                bind:value={filters.from}
-                onchange={applyFilters}
-            />
-            <input
-                class="rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
-                type="date"
-                bind:value={filters.to}
-                onchange={applyFilters}
-            />
+<main class="page">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Historial de operaciones</h1>
+            <p class="page-subtitle">
+                Consulta, filtra y exporta todos los movimientos
+            </p>
         </div>
+        <ExportButtons
+            title="Historial de operaciones"
+            data={transactions}
+            columns={exportColumns}
+            filename="historial-operaciones"
+        />
     </div>
 
-    <div class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+    {#if error}
+        <p
+            class="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-300"
+        >
+            {error}
+        </p>
+    {/if}
+
+    <div class="filter-bar">
+        <button
+            type="button"
+            class={`btn text-sm ${exactMatchEnabled ? "border-amber-500/40 bg-amber-500/10 text-amber-300" : ""}`}
+            onclick={() => {
+                exactMatchEnabled = !exactMatchEnabled;
+                applyFilters();
+            }}
+        >
+            {exactMatchEnabled
+                ? "Coincidencia exacta: ON"
+                : "Coincidencia exacta: OFF"}
+        </button>
+        <input
+            class="field min-w-40"
+            placeholder="Tesorería"
+            bind:value={filters.account}
+            oninput={applyFilters}
+        />
+        <input
+            class="field min-w-40"
+            placeholder="Destino"
+            bind:value={filters.destination}
+            oninput={applyFilters}
+        />
+        <input
+            class="field min-w-40"
+            placeholder="Concepto"
+            bind:value={filters.concept}
+            oninput={applyFilters}
+        />
+        <input
+            class="field min-w-40"
+            placeholder="Comentario"
+            bind:value={filters.comment}
+            oninput={applyFilters}
+        />
+        <select
+            class="field"
+            bind:value={filters.type}
+            onchange={applyFilters}
+        >
+            <option value="">Todos los tipos</option>
+            <option value="deposit">Ingreso</option>
+            <option value="withdrawal">Extracción</option>
+            <option value="transfer">Transferencia</option>
+        </select>
+        <input
+            class="field min-w-28"
+            placeholder="Moneda"
+            bind:value={filters.currency}
+            oninput={applyFilters}
+        />
+        <input
+            class="field w-28"
+            type="number"
+            step="0.01"
+            placeholder="Mín."
+            bind:value={filters.minAmount}
+            oninput={applyFilters}
+        />
+        <input
+            class="field w-28"
+            type="number"
+            step="0.01"
+            placeholder="Máx."
+            bind:value={filters.maxAmount}
+            oninput={applyFilters}
+        />
+        <input
+            class="field"
+            type="date"
+            bind:value={filters.from}
+            onchange={applyFilters}
+        />
+        <input
+            class="field"
+            type="date"
+            bind:value={filters.to}
+            onchange={applyFilters}
+        />
+    </div>
+
+    <div class="table-wrap">
         {#if loading}
-            <p class="p-4 text-zinc-400">Cargando...</p>
+            <p class="p-6 text-sm text-zinc-400">Cargando operaciones…</p>
         {:else if transactions.length === 0}
-            <p class="p-4 text-zinc-400">
+            <div class="empty-state m-0 rounded-none border-0 bg-transparent">
                 No hay operaciones registradas que coincidan con los filtros
-            </p>
+            </div>
         {:else}
-            <table class="w-full text-sm">
-                <thead class="bg-zinc-800/50 text-zinc-400 text-left">
-                    <tr>
-                        <th class="p-2">Tesorería</th>
-                        <th class="p-2">Fecha</th>
-                        <th class="p-2">Tipo</th>
-                        <th class="p-2">Destino</th>
-                        <th class="p-2">Concepto</th>
-                        <th class="p-2">Comentario</th>
-                        <th class="p-2 text-right">Monto</th>
-                        <th class="p-2 text-right">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {#each transactions as t (t.id)}
-                        <tr class="border-t border-zinc-800 hover:bg-zinc-800">
-                            <td class="p-2">
-                                <div class="flex items-center gap-2">
-                                    <span
-                                        class="w-2 h-2 rounded-full shrink-0"
-                                        style:background-color={t.color ??
-                                            "#71717a"}
-                                    ></span>
-                                    ({t.account_number}) {t.account_name}
-                                </div>
-                            </td>
-                            <td class="p-2 whitespace-nowrap"
-                                >{formatDate(t.occurred_at)}</td
-                            >
-                            <td class="p-2">
-                                <span
-                                    class="px-2 py-0.5 rounded-full text-xs {typeBadgeClass(
-                                        t.type,
-                                    )}"
-                                >
-                                    {TYPE_LABELS[t.type] ?? t.type}
-                                </span>
-                            </td>
-                            <td class="p-2 text-zinc-400">
-                                {t.related_account_name
-                                    ? `${t.related_account_name} (${t.related_account_number})`
-                                    : "—"}
-                            </td>
-                            <td class="p-2 text-zinc-300"
-                                >{t.concept_name ?? "—"}</td
-                            >
-                            <td class="p-2 text-zinc-400">{t.comment ?? "—"}</td
-                            >
-                            <td class="p-2 text-right font-medium">
-                                {formatAmount(t.amount, t.currency)}
-                            </td>
-                            <td class="p-2">
-                                <div
-                                    class="flex justify-end items-center gap-2"
-                                >
-                                    <EditTransactionButton
-                                        transaction={t}
-                                        onUpdated={loadData}
-                                    />
-                                    <DeleteTransactionButton
-                                        id={t.id}
-                                        onDeleted={loadData}
-                                    />
-                                </div>
-                            </td>
+            <div class="overflow-x-auto">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Tesorería</th>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th>Destino</th>
+                            <th>Concepto</th>
+                            <th>Comentario</th>
+                            <th class="text-right">Monto</th>
+                            <th class="text-right">Acciones</th>
                         </tr>
-                    {/each}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {#each transactions as t (t.id)}
+                            <tr>
+                                <td>
+                                    <div class="flex items-center gap-2">
+                                        <span
+                                            class="h-2 w-2 shrink-0 rounded-full"
+                                            style:background-color={t.color ??
+                                                "#71717a"}
+                                        ></span>
+                                        <span class="text-zinc-200">
+                                            ({t.account_number}) {t.account_name}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="whitespace-nowrap text-zinc-300">
+                                    {formatDate(t.occurred_at)}
+                                </td>
+                                <td>
+                                    <span
+                                        class="badge {typeBadgeClass(t.type)}"
+                                    >
+                                        {TYPE_LABELS[t.type] ?? t.type}
+                                    </span>
+                                </td>
+                                <td class="text-zinc-400">
+                                    {t.related_account_name
+                                        ? `${t.related_account_name} (${t.related_account_number})`
+                                        : "—"}
+                                </td>
+                                <td class="text-zinc-300"
+                                    >{t.concept_name ?? "—"}</td
+                                >
+                                <td class="text-zinc-400">{t.comment ?? "—"}</td>
+                                <td class="text-right font-medium text-zinc-100">
+                                    {formatAmount(t.amount, t.currency)}
+                                </td>
+                                <td>
+                                    <div
+                                        class="flex items-center justify-end gap-1.5"
+                                    >
+                                        <EditTransactionButton
+                                            transaction={t}
+                                            onUpdated={loadData}
+                                        />
+                                        <DeleteTransactionButton
+                                            id={t.id}
+                                            onDeleted={loadData}
+                                        />
+                                    </div>
+                                </td>
+                            </tr>
+                        {/each}
+                    </tbody>
+                </table>
+            </div>
         {/if}
     </div>
 </main>

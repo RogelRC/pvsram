@@ -27,12 +27,15 @@
     onMount(checkAuth);
 </script>
 
-<div class="min-h-screen bg-black text-white flex flex-col">
+<div class="flex min-h-screen flex-col text-zinc-100">
     {#if loading}
         <div
-            class="flex items-center justify-center h-screen text-zinc-400 bg-zinc-950"
+            class="flex h-screen flex-col items-center justify-center gap-3 text-zinc-400"
         >
-            Cargando...
+            <div
+                class="h-8 w-8 animate-pulse rounded-xl bg-indigo-500/20 ring-1 ring-indigo-400/30"
+            ></div>
+            <p class="text-sm tracking-wide">Cargando Tesora…</p>
         </div>
     {:else if !authenticated}
         <LoginScreen
@@ -41,7 +44,7 @@
         />
     {:else}
         <Header />
-        <main class="flex-1 pt-16">
+        <main class="flex-1 pt-14">
             {@render children()}
         </main>
     {/if}

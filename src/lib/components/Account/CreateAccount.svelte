@@ -113,125 +113,131 @@
     }
 </script>
 
-<button
-    onclick={menu}
-    class="border rounded-md p-1 hover:bg-zinc-700 border-zinc-800 flex items-center gap-2 px-3"
->
-    <Plus />
-    <span class="mr-2">Nueva tesorería</span>
+<button onclick={menu} class="btn-primary">
+    <Plus size={16} />
+    <span>Nueva tesorería</span>
 </button>
 {#if isOpen}
-    <div
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs"
-    >
-        <div
-            class="flex flex-col bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl p-4 min-w-120 gap-4"
-        >
+    <div class="modal-backdrop">
+        <div class="modal-panel max-w-xl">
             <div
-                class="flex justify-between border-b border-zinc-700 items-center pb-2"
+                class="flex items-center justify-between border-b border-zinc-800 pb-3"
             >
-                <h3 class="text-2xl font-bold">Nueva tesorería</h3>
-                <button
-                    onclick={menu}
-                    class="border rounded-md p-1 hover:bg-zinc-700 border-zinc-800 flex items-center gap-2 px-3"
-                >
-                    <X />
+                <h3 class="text-lg font-semibold text-zinc-50">
+                    Nueva tesorería
+                </h3>
+                <button onclick={menu} class="btn-icon" aria-label="Cerrar">
+                    <X size={16} />
                 </button>
             </div>
 
             {#if error}
-                <p class="text-red-400 text-sm">{error}</p>
+                <p
+                    class="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-300"
+                >
+                    {error}
+                </p>
             {/if}
 
-            <div class="flex items-center gap-2">
-                <span>Número:</span>
-                <input
-                    class="p-1 w-full bg-zinc-800 rounded-md"
-                    type="text"
-                    bind:value={number}
-                    disabled={saving}
-                />
-            </div>
-            <div class="flex items-center gap-2">
-                <span>Nombre:</span>
-                <input
-                    class="p-1 w-full bg-zinc-800 rounded-md"
-                    type="text"
-                    bind:value={name}
-                    disabled={saving}
-                />
-            </div>
-            <div class="flex items-center gap-2">
-                <span>Destino:</span>
-                <input
-                    class="p-1 w-full bg-zinc-800 rounded-md"
-                    type="text"
-                    bind:value={description}
-                    disabled={saving}
-                />
-            </div>
-            <div class="flex items-center gap-2">
-                <span>Comentario:</span>
-                <input
-                    class="p-1 w-full bg-zinc-800 rounded-md"
-                    type="text"
-                    bind:value={owner}
-                    disabled={saving}
-                />
-            </div>
-            <div class="flex items-center gap-2">
-                <span>Moneda:</span>
-                {#if isCustomCurrency}
-                    <button
-                        onclick={backToSelect}
-                        disabled={saving}
-                        class="flex items-center justify-center border rounded-md bg-white/10 hover:bg-white/20 p-1 shrink-0"
-                        title="Volver a la lista"
-                    >
-                        <ArrowLeft size={16} />
-                    </button>
+            <div class="grid gap-3">
+                <label class="flex flex-col gap-1.5">
+                    <span class="label-muted">Número</span>
                     <input
-                        class="p-1 w-full bg-zinc-800 rounded-md uppercase"
+                        class="field w-full"
                         type="text"
-                        maxlength="10"
-                        placeholder="Ej: MXN"
-                        bind:value={customCurrency}
+                        bind:value={number}
                         disabled={saving}
                     />
-                {:else}
-                    <select
-                        class="p-1 w-full bg-zinc-800 rounded-md"
-                        value={selectedCurrency}
-                        onchange={onCurrencySelect}
+                </label>
+                <label class="flex flex-col gap-1.5">
+                    <span class="label-muted">Nombre</span>
+                    <input
+                        class="field w-full"
+                        type="text"
+                        bind:value={name}
                         disabled={saving}
-                    >
-                        {#each availableCurrencies as cur (cur)}
-                            <option value={cur}>{cur}</option>
-                        {/each}
-                        <option value={CUSTOM_OPTION}>Otra...</option>
-                    </select>
-                {/if}
+                    />
+                </label>
+                <label class="flex flex-col gap-1.5">
+                    <span class="label-muted">Destino</span>
+                    <input
+                        class="field w-full"
+                        type="text"
+                        bind:value={description}
+                        disabled={saving}
+                    />
+                </label>
+                <label class="flex flex-col gap-1.5">
+                    <span class="label-muted">Comentario</span>
+                    <input
+                        class="field w-full"
+                        type="text"
+                        bind:value={owner}
+                        disabled={saving}
+                    />
+                </label>
+                <div class="flex flex-col gap-1.5">
+                    <span class="label-muted">Moneda</span>
+                    <div class="flex items-center gap-2">
+                        {#if isCustomCurrency}
+                            <button
+                                onclick={backToSelect}
+                                disabled={saving}
+                                class="btn-icon shrink-0"
+                                title="Volver a la lista"
+                            >
+                                <ArrowLeft size={16} />
+                            </button>
+                            <input
+                                class="field w-full uppercase"
+                                type="text"
+                                maxlength="10"
+                                placeholder="Ej: MXN"
+                                bind:value={customCurrency}
+                                disabled={saving}
+                            />
+                        {:else}
+                            <select
+                                class="field w-full"
+                                value={selectedCurrency}
+                                onchange={onCurrencySelect}
+                                disabled={saving}
+                            >
+                                {#each availableCurrencies as cur (cur)}
+                                    <option value={cur}>{cur}</option>
+                                {/each}
+                                <option value={CUSTOM_OPTION}>Otra…</option>
+                            </select>
+                        {/if}
+                    </div>
+                </div>
+                <label class="flex flex-col gap-1.5">
+                    <span class="label-muted">Color</span>
+                    <div class="flex items-center gap-3">
+                        <input
+                            class="h-10 w-14 cursor-pointer rounded-lg border border-zinc-700 bg-zinc-950"
+                            type="color"
+                            bind:value={color}
+                            disabled={saving}
+                        />
+                        <span class="font-mono text-sm text-zinc-400"
+                            >{color}</span
+                        >
+                    </div>
+                </label>
             </div>
-            <div class="flex items-center gap-2">
-                <span>Color:</span>
-                <input
-                    class="h-8 w-14 bg-zinc-800 rounded-md border border-zinc-700 cursor-pointer"
-                    type="color"
-                    bind:value={color}
-                    disabled={saving}
-                />
-                <span class="text-sm text-zinc-400">{color}</span>
-            </div>
-            <div class="flex justify-end">
+
+            <div class="flex justify-end gap-2 border-t border-zinc-800 pt-3">
+                <button onclick={menu} class="btn" disabled={saving}>
+                    Cancelar
+                </button>
                 <button
                     onclick={handleSave}
                     disabled={saving}
-                    class="border rounded-md p-1 hover:bg-zinc-700 border-zinc-800 flex items-center gap-2 px-3"
+                    class="btn-primary"
                 >
-                    <span class="mr-2"
-                        >{saving ? "Guardando..." : "Guardar"}</span
-                    >
-                    <Save />
+                    <Save size={16} />
+                    <span>{saving ? "Guardando…" : "Guardar"}</span>
                 </button>
             </div>
         </div>

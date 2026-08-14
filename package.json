@@ -1,7 +1,7 @@
 {
-  "name": "pvsr-accounts-management",
+  "name": "tesora",
   "version": "0.1.0",
-  "description": "",
+  "description": "Tesora — gestión de tesorerías, operaciones e informes",
   "type": "module",
   "scripts": {
     "dev": "vite dev",

@@ -203,39 +203,44 @@
     }
 </script>
 
-<button type="button" onclick={menu} class="p-2 rounded-md hover:bg-white/5">
-    <ArrowLeftRight />
+<button
+    type="button"
+    onclick={menu}
+    class="btn-icon"
+    title="Nueva operación"
+    aria-label="Nueva operación"
+>
+    <ArrowLeftRight size={18} />
 </button>
 {#if isOpen}
-    <div
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs"
-    >
-        <div
-            class="flex flex-col bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl p-4 min-w-120 gap-4"
-        >
+    <div class="modal-backdrop">
+        <div class="modal-panel max-w-xl">
             <div
-                class="flex justify-between border-b border-zinc-700 items-center pb-2"
+                class="flex items-center justify-between border-b border-zinc-800 pb-3"
             >
-                <h3 class="text-2xl font-bold">Nueva operación</h3>
+                <h3 class="text-lg font-semibold text-zinc-50">
+                    Nueva operación
+                </h3>
                 <button
                     type="button"
                     onclick={menu}
-                    class="border rounded-md p-1 hover:bg-zinc-700 border-zinc-800 flex items-center gap-2 px-3"
+                    class="btn-icon"
+                    aria-label="Cerrar"
                 >
-                    <X />
+                    <X size={16} />
                 </button>
             </div>
 
-            <div class="flex gap-2">
+            <div class="grid grid-cols-3 gap-2">
                 {#each OPERATIONS as op (op.value)}
                     <button
                         type="button"
                         onclick={() => selectOperation(op.value)}
                         disabled={saving}
-                        class="flex-1 border rounded-lg p-2 transition-colors {operation ===
+                        class="rounded-lg border px-2 py-2 text-sm font-medium transition-all {operation ===
                         op.value
-                            ? 'bg-white/20 border-white/30'
-                            : 'bg-white/5 border-zinc-800 hover:bg-white/10'}"
+                            ? 'border-indigo-400/40 bg-indigo-500/15 text-indigo-100'
+                            : 'border-zinc-800 bg-zinc-950/40 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-800/60 hover:text-zinc-200'}"
                     >
                         {op.label}
                     </button>
@@ -243,118 +248,135 @@
             </div>
 
             {#if error}
-                <p class="text-red-400 text-sm">{error}</p>
+                <p
+                    class="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-300"
+                >
+                    {error}
+                </p>
             {/if}
 
-            <div class="flex items-center gap-2">
-                <span>Cuenta:</span>
-                <input
-                    class="p-1 w-full bg-zinc-800/50 rounded-md text-zinc-400 cursor-not-allowed"
-                    type="text"
-                    value="{account.name} ({account.number})"
-                    disabled
-                />
-            </div>
-
-            {#if operation === "transfer"}
-                <div class="flex items-center gap-2">
-                    <span>Destino:</span>
-                    {#if otherAccounts.length === 0}
-                        <span class="text-sm text-zinc-400">
-                            No hay otras cuentas en {account.currency} disponibles
-                            para transferir
-                        </span>
-                    {:else}
-                        <select
-                            class="p-1 w-full bg-zinc-800 rounded-md"
-                            bind:value={relatedAccountId}
-                            disabled={saving}
-                        >
-                            {#each otherAccounts as acc (acc.id)}
-                                <option value={acc.id}>
-                                    {acc.name} ({acc.number}) · {acc.currency}
-                                </option>
-                            {/each}
-                        </select>
-                    {/if}
-                </div>
-            {/if}
-
-            <div class="flex items-center gap-2">
-                <span>Concepto:</span>
-                {#if isCustomConcept}
-                    {#if availableConcepts.length > 0}
-                        <button
-                            type="button"
-                            onclick={backToConceptSelect}
-                            disabled={saving}
-                            class="flex items-center justify-center border rounded-md bg-white/10 hover:bg-white/20 p-1 shrink-0"
-                            title="Volver a la lista"
-                        >
-                            <ArrowLeft size={16} />
-                        </button>
-                    {/if}
+            <div class="grid gap-3">
+                <label class="flex flex-col gap-1.5">
+                    <span class="label-muted">Cuenta</span>
                     <input
-                        class="p-1 w-full bg-zinc-800 rounded-md"
+                        class="field w-full cursor-not-allowed opacity-60"
                         type="text"
-                        placeholder="Nombre del concepto"
-                        bind:value={customConcept}
+                        value="{account.name} ({account.number})"
+                        disabled
+                    />
+                </label>
+
+                {#if operation === "transfer"}
+                    <div class="flex flex-col gap-1.5">
+                        <span class="label-muted">Destino</span>
+                        {#if otherAccounts.length === 0}
+                            <span class="text-sm text-zinc-400">
+                                No hay otras cuentas en {account.currency} disponibles
+                                para transferir
+                            </span>
+                        {:else}
+                            <select
+                                class="field w-full"
+                                bind:value={relatedAccountId}
+                                disabled={saving}
+                            >
+                                {#each otherAccounts as acc (acc.id)}
+                                    <option value={acc.id}>
+                                        {acc.name} ({acc.number}) · {acc.currency}
+                                    </option>
+                                {/each}
+                            </select>
+                        {/if}
+                    </div>
+                {/if}
+
+                <div class="flex flex-col gap-1.5">
+                    <span class="label-muted">Concepto</span>
+                    <div class="flex items-center gap-2">
+                        {#if isCustomConcept}
+                            {#if availableConcepts.length > 0}
+                                <button
+                                    type="button"
+                                    onclick={backToConceptSelect}
+                                    disabled={saving}
+                                    class="btn-icon shrink-0"
+                                    title="Volver a la lista"
+                                >
+                                    <ArrowLeft size={16} />
+                                </button>
+                            {/if}
+                            <input
+                                class="field w-full"
+                                type="text"
+                                placeholder="Nombre del concepto"
+                                bind:value={customConcept}
+                                disabled={saving}
+                            />
+                        {:else}
+                            <select
+                                class="field w-full"
+                                value={selectedConceptId ?? ""}
+                                onchange={onConceptSelect}
+                                disabled={saving}
+                            >
+                                {#each availableConcepts as concept (concept.id)}
+                                    <option value={concept.id}
+                                        >{concept.name}</option
+                                    >
+                                {/each}
+                                <option value={CUSTOM_OPTION}
+                                    >Agregar otro…</option
+                                >
+                            </select>
+                        {/if}
+                    </div>
+                </div>
+
+                <label class="flex flex-col gap-1.5">
+                    <span class="label-muted">Monto</span>
+                    <div class="flex items-center gap-2">
+                        <input
+                            class="field w-full"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="0.00"
+                            bind:value={amount}
+                            disabled={saving}
+                        />
+                        <span
+                            class="shrink-0 rounded-md border border-zinc-800 bg-zinc-950/50 px-2 py-2 text-sm text-zinc-400"
+                        >
+                            {account.currency}
+                        </span>
+                    </div>
+                </label>
+
+                <label class="flex flex-col gap-1.5">
+                    <span class="label-muted">Comentario</span>
+                    <input
+                        class="field w-full"
+                        type="text"
+                        bind:value={comment}
                         disabled={saving}
                     />
-                {:else}
-                    <select
-                        class="p-1 w-full bg-zinc-800 rounded-md"
-                        value={selectedConceptId ?? ""}
-                        onchange={onConceptSelect}
-                        disabled={saving}
-                    >
-                        {#each availableConcepts as concept (concept.id)}
-                            <option value={concept.id}>{concept.name}</option>
-                        {/each}
-                        <option value={CUSTOM_OPTION}>Agregar otro...</option>
-                    </select>
-                {/if}
+                </label>
             </div>
 
-            <div class="flex items-center gap-2">
-                <span>Monto:</span>
-                <input
-                    class="p-1 w-full bg-zinc-800 rounded-md"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    bind:value={amount}
-                    disabled={saving}
-                />
-                <span class="text-sm text-zinc-400 shrink-0"
-                    >{account.currency}</span
-                >
-            </div>
-
-            <div class="flex items-center gap-2">
-                <span>Comentario:</span>
-                <input
-                    class="p-1 w-full bg-zinc-800 rounded-md"
-                    type="text"
-                    bind:value={comment}
-                    disabled={saving}
-                />
-            </div>
-
-            <div class="flex justify-end">
+            <div class="flex justify-end gap-2 border-t border-zinc-800 pt-3">
+                <button type="button" onclick={menu} class="btn" disabled={saving}>
+                    Cancelar
+                </button>
                 <button
                     type="button"
                     onclick={handleSave}
                     disabled={saving ||
                         (operation === "transfer" &&
                             otherAccounts.length === 0)}
-                    class="border rounded-md p-1 hover:bg-zinc-700 border-zinc-800 flex items-center gap-2 px-3"
+                    class="btn-primary"
                 >
-                    <span class="mr-2"
-                        >{saving ? "Guardando..." : "Guardar"}</span
-                    >
-                    <Save />
+                    <Save size={16} />
+                    <span>{saving ? "Guardando…" : "Guardar"}</span>
                 </button>
             </div>
         </div>

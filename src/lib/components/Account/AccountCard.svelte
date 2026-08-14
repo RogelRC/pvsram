@@ -4,6 +4,8 @@
     import EditAccountButton from "$lib/components/Account/EditAccountButton.svelte";
     import TransactionButton from "$lib/components/Account/OperationsAccountButton.svelte";
     import { deleteAccount } from "$lib/services/accounts";
+    import { formatMoney } from "$lib/utils/money";
+
     interface Props {
         account: Account;
         balance?: number;
@@ -50,56 +52,84 @@
     }
 </script>
 
-<div
-    class="flex flex-col bg-[#171717] rounded-md w-full p-4 border border-white/10"
->
+<div class="card group relative flex flex-col overflow-hidden">
     <div
-        class="w-16 h-3 mb-3 rounded-full"
+        class="absolute inset-x-0 top-0 h-1 opacity-90"
         style:background-color={account.color}
     ></div>
-    <h3 class="font-bold text-l">{account.name}</h3>
-    <span class="mb-3">{account.destination}</span>
-    <span>Número de cuenta</span>
-    <span class="mb-3">{account.number}</span>
-    <span>Comentario</span>
-    <span class="mb-3">{account.comment}</span>
-    <div class="flex justify-between">
+
+    <div class="mb-3 flex items-start justify-between gap-2 pt-1">
+        <div class="min-w-0">
+            <h3 class="truncate text-base font-semibold text-zinc-50">
+                {account.name}
+            </h3>
+            {#if account.destination}
+                <p class="mt-0.5 truncate text-sm text-zinc-400">
+                    {account.destination}
+                </p>
+            {/if}
+        </div>
+        <span
+            class="shrink-0 rounded-md border border-zinc-800 bg-zinc-950/50 px-2 py-0.5 text-xs font-medium text-zinc-400"
+        >
+            {account.currency}
+        </span>
+    </div>
+
+    <div class="mb-4 space-y-2.5">
         <div>
-            <span>Saldo actual</span>
-            <div>
-                <span class="text-2xl font-bold">{balance}</span>
-                <span>{account.currency}</span>
+            <div class="label-muted">Número de cuenta</div>
+            <div class="mt-0.5 font-mono text-sm text-zinc-200">
+                {account.number}
             </div>
         </div>
-        <div class="flex items-end gap-2 relative">
+        {#if account.comment}
+            <div>
+                <div class="label-muted">Comentario</div>
+                <div class="mt-0.5 text-sm text-zinc-300">{account.comment}</div>
+            </div>
+        {/if}
+    </div>
+
+    <div class="mt-auto flex items-end justify-between gap-3 border-t border-zinc-800/80 pt-3">
+        <div>
+            <div class="label-muted">Saldo actual</div>
+            <div class="mt-0.5 flex items-baseline gap-1.5">
+                <span class="text-2xl font-semibold tracking-tight text-zinc-50">
+                    {formatMoney(balance)}
+                </span>
+                <span class="text-sm text-zinc-500">{account.currency}</span>
+            </div>
+        </div>
+        <div class="flex items-end gap-1.5 relative">
             <TransactionButton {account} onCreated={onUpdated} />
 
-            <!-- Dropdown menu trigger -->
             <div class="relative">
                 <button
-                    class="p-2 rounded-md hover:bg-white/5"
+                    class="btn-icon"
                     aria-label="Más opciones"
                     onclick={() => (showMenu = !showMenu)}
                 >
-                    <MoreHorizontal />
+                    <MoreHorizontal size={18} />
                 </button>
 
                 {#if showMenu}
+                    <button
+                        type="button"
+                        class="fixed inset-0 z-30 cursor-default"
+                        aria-label="Cerrar menú"
+                        onclick={() => (showMenu = false)}
+                    ></button>
                     <div
-                        class="absolute right-0 mt-2 w-44 bg-[#0f0f0f] border border-white/10 rounded-md shadow-lg z-40"
+                        class="absolute right-0 z-40 mt-2 w-48 rounded-xl border border-zinc-800 bg-zinc-900/95 p-1.5 shadow-xl shadow-black/40 backdrop-blur-md"
                     >
-                        <div class="p-2">
-                            <div class="mb-2">
-                                <!-- Reuse edit button inside menu -->
-                                <EditAccountButton {account} {onUpdated} />
-                            </div>
-                            <button
-                                class="w-full text-left px-3 py-2 rounded hover:bg-red-600/10 text-red-400"
-                                onclick={() => openDeleteConfirm()}
-                            >
-                                Eliminar cuenta
-                            </button>
-                        </div>
+                        <EditAccountButton {account} {onUpdated} />
+                        <button
+                            class="w-full rounded-lg px-3 py-2 text-left text-sm text-red-300 transition-colors hover:bg-red-500/10"
+                            onclick={() => openDeleteConfirm()}
+                        >
+                            Eliminar cuenta
+                        </button>
                     </div>
                 {/if}
             </div>
@@ -108,45 +138,40 @@
 </div>
 
 {#if showDeleteConfirm}
-    <div
-        class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-    >
-        <div
-            class="bg-[#171717] p-6 rounded-md w-full max-w-lg border border-white/10"
-        >
-            <h3 class="text-xl font-bold mb-2">
-                Confirmar eliminación de cuenta
+    <div class="modal-backdrop">
+        <div class="modal-panel">
+            <h3 class="text-lg font-semibold text-zinc-50">
+                Confirmar eliminación
             </h3>
-            <p class="mb-4 text-sm text-zinc-300">
+            <p class="text-sm leading-relaxed text-zinc-400">
                 Esta acción eliminará la cuenta y toda la información
-                relacionada (transacciones, informes, etc.). Esta operación no
-                se puede deshacer.
+                relacionada (transacciones, informes, etc.). No se puede
+                deshacer.
             </p>
-            <p class="mb-4 text-sm">
-                Para confirmar, escribe el nombre de la cuenta: <span
-                    class="font-semibold">{account.name}</span
-                >
+            <p class="text-sm text-zinc-300">
+                Para confirmar, escribe el nombre de la cuenta:
+                <span class="font-semibold text-zinc-100">{account.name}</span>
             </p>
             <input
-                class="w-full mb-4 p-2 rounded bg-[#0b0b0b] border border-white/10"
-                placeholder="Escribe el nombre de la cuenta para confirmar"
+                class="field w-full"
+                placeholder="Nombre de la cuenta"
                 bind:value={confirmText}
             />
             <div class="flex justify-end gap-2">
                 <button
-                    class="px-4 py-2 rounded hover:bg-white/5"
+                    class="btn"
                     onclick={() => cancelDelete()}
                     disabled={deleting}
                 >
                     Cancelar
                 </button>
                 <button
-                    class="px-4 py-2 rounded bg-red-600 text-white disabled:opacity-50"
+                    class="btn-danger"
                     onclick={() => confirmDelete()}
                     disabled={confirmText !== account.name || deleting}
                 >
                     {#if deleting}
-                        Eliminando...
+                        Eliminando…
                     {:else}
                         Eliminar definitivamente
                     {/if}
@@ -158,7 +183,7 @@
 
 {#if toast}
     <div
-        class="fixed bottom-4 right-4 bg-zinc-900 text-white px-4 py-2 rounded shadow z-50"
+        class="fixed bottom-4 right-4 z-50 rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-100 shadow-xl shadow-black/40"
     >
         {toast}
     </div>

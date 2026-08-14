@@ -56,79 +56,92 @@
 <button
     type="button"
     onclick={menu}
-    class="border rounded-md p-1 hover:bg-zinc-700 border-zinc-800 flex items-center gap-2 px-3"
+    class="btn-ghost w-full justify-start"
 >
     <KeyRound size={16} />
     <span>Cambiar contraseña</span>
 </button>
 {#if isOpen}
-    <div
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs"
-    >
-        <div
-            class="flex flex-col bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl p-4 min-w-96 gap-4"
-        >
+    <div class="modal-backdrop">
+        <div class="modal-panel max-w-md">
             <div
-                class="flex justify-between border-b border-zinc-700 items-center pb-2"
+                class="flex items-center justify-between border-b border-zinc-800 pb-3"
             >
-                <h3 class="text-2xl font-bold">Cambiar contraseña</h3>
+                <h3 class="text-lg font-semibold text-zinc-50">
+                    Cambiar contraseña
+                </h3>
                 <button
                     type="button"
                     onclick={menu}
-                    class="border rounded-md p-1 hover:bg-zinc-700 border-zinc-800 flex items-center gap-2 px-3"
+                    class="btn-icon"
+                    aria-label="Cerrar"
                 >
-                    <X />
+                    <X size={16} />
                 </button>
             </div>
 
             {#if error}
-                <p class="text-red-400 text-sm">{error}</p>
+                <p
+                    class="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-300"
+                >
+                    {error}
+                </p>
             {/if}
             {#if success}
-                <p class="text-green-400 text-sm">
+                <p
+                    class="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300"
+                >
                     Contraseña actualizada correctamente
                 </p>
             {/if}
 
-            <div class="flex items-center gap-2">
-                <span>Actual:</span>
-                <input
-                    class="p-1 w-full bg-zinc-800 rounded-md"
-                    type="password"
-                    bind:value={currentPassword}
-                    disabled={saving}
-                />
-            </div>
-            <div class="flex items-center gap-2">
-                <span>Nueva:</span>
-                <input
-                    class="p-1 w-full bg-zinc-800 rounded-md"
-                    type="password"
-                    bind:value={newPassword}
-                    disabled={saving}
-                />
-            </div>
-            <div class="flex items-center gap-2">
-                <span>Confirmar:</span>
-                <input
-                    class="p-1 w-full bg-zinc-800 rounded-md"
-                    type="password"
-                    bind:value={confirmPassword}
-                    disabled={saving}
-                />
+            <div class="grid gap-3">
+                <label class="flex flex-col gap-1.5">
+                    <span class="label-muted">Contraseña actual</span>
+                    <input
+                        class="field w-full"
+                        type="password"
+                        bind:value={currentPassword}
+                        disabled={saving}
+                    />
+                </label>
+                <label class="flex flex-col gap-1.5">
+                    <span class="label-muted">Nueva contraseña</span>
+                    <input
+                        class="field w-full"
+                        type="password"
+                        bind:value={newPassword}
+                        disabled={saving}
+                    />
+                </label>
+                <label class="flex flex-col gap-1.5">
+                    <span class="label-muted">Confirmar nueva</span>
+                    <input
+                        class="field w-full"
+                        type="password"
+                        bind:value={confirmPassword}
+                        disabled={saving}
+                    />
+                </label>
             </div>
 
-            <div class="flex justify-end">
+            <div class="flex justify-end gap-2 border-t border-zinc-800 pt-3">
+                <button
+                    type="button"
+                    onclick={menu}
+                    class="btn"
+                    disabled={saving}
+                >
+                    Cancelar
+                </button>
                 <button
                     type="button"
                     onclick={handleSave}
                     disabled={saving}
-                    class="border rounded-md p-1 hover:bg-zinc-700 border-zinc-800 flex items-center gap-2 px-3"
+                    class="btn-primary"
                 >
-                    <span class="mr-2"
-                        >{saving ? "Guardando..." : "Guardar"}</span
-                    >
-                    <Save />
+                    <Save size={16} />
+                    <span>{saving ? "Guardando…" : "Guardar"}</span>
                 </button>
             </div>
         </div>

@@ -257,18 +257,25 @@
     ];
 </script>
 
-<main class="flex flex-col p-4 gap-4">
-    <h1 class="text-2xl font-bold">Informes</h1>
+<main class="page">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Informes</h1>
+            <p class="page-subtitle">
+                Saldos, movimientos y balances mensuales listos para exportar
+            </p>
+        </div>
+    </div>
 
-    <div class="flex gap-2">
+    <div class="flex flex-wrap gap-2">
         {#each TABS as t (t.value)}
             <button
                 type="button"
                 onclick={() => selectTab(t.value)}
-                class="border rounded-md p-1 hover:bg-zinc-700 border-zinc-800 flex items-center gap-2 px-3 {tab ===
+                class="rounded-lg border px-3 py-2 text-sm font-medium transition-all {tab ===
                 t.value
-                    ? 'bg-white/20 border-white/30'
-                    : 'bg-white/5 border-zinc-800 hover:bg-white/10'}"
+                    ? 'border-indigo-400/40 bg-indigo-500/15 text-indigo-100'
+                    : 'border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-800/70 hover:text-zinc-200'}"
             >
                 {t.label}
             </button>
@@ -276,7 +283,11 @@
     </div>
 
     {#if error}
-        <p class="text-red-400 text-sm">{error}</p>
+        <p
+            class="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-300"
+        >
+            {error}
+        </p>
     {/if}
 
     <!-- Informe 1: saldos actuales -->
@@ -289,12 +300,10 @@
                 filename="saldos-actuales"
             />
         </div>
-        <div
-            class="flex flex-wrap gap-3 rounded-lg border border-zinc-800 bg-zinc-900/70 p-3"
-        >
+        <div class="filter-bar">
             <button
                 type="button"
-                class={`rounded-md border px-3 py-1 text-sm transition-colors ${exactMatchEnabled ? "border-amber-500 bg-amber-500/15 text-amber-400" : "border-zinc-700 bg-zinc-800 text-zinc-300"}`}
+                class={`btn text-sm ${exactMatchEnabled ? "border-amber-500/40 bg-amber-500/10 text-amber-300" : ""}`}
                 onclick={() => {
                     exactMatchEnabled = !exactMatchEnabled;
                     applyBalanceFilters();
@@ -305,52 +314,50 @@
                     : "Coincidencia exacta: OFF"}
             </button>
             <input
-                class="min-w-44 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
+                class="field min-w-44"
                 placeholder="Tesorería"
                 bind:value={balanceFilters.account}
                 oninput={applyBalanceFilters}
             />
             <input
-                class="min-w-28 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
+                class="field min-w-28"
                 placeholder="Moneda"
                 bind:value={balanceFilters.currency}
                 oninput={applyBalanceFilters}
             />
         </div>
 
-        <div
-            class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden"
-        >
+        <div class="table-wrap overflow-x-auto">
             {#if loading}
-                <p class="p-4 text-zinc-400">Cargando...</p>
+                <p class="p-6 text-sm text-zinc-400">Cargando…</p>
             {:else if balances.length === 0}
-                <p class="p-4 text-zinc-400">No hay tesorerías</p>
+                <div class="empty-state m-0 rounded-none border-0 bg-transparent">
+                    No hay tesorerías
+                </div>
             {:else}
-                <table class="w-full text-sm">
-                    <thead class="bg-zinc-800/50 text-zinc-400 text-left">
+                <table class="data-table">
+                    <thead>
                         <tr>
-                            <th class="p-2">Tesorería</th>
-                            <th class="p-2">Moneda</th>
-                            <th class="p-2 text-right">Saldo actual</th>
+                            <th>Tesorería</th>
+                            <th>Moneda</th>
+                            <th class="text-right">Saldo actual</th>
                         </tr>
                     </thead>
                     <tbody>
                         {#each balances as b (b.account_id)}
-                            <tr
-                                class="border-t border-zinc-800 hover:bg-zinc-800"
-                            >
-                                <td class="p-2">
+                            <tr>
+                                <td>
                                     <div class="flex items-center gap-2">
                                         <span
-                                            class="w-2 h-2 rounded-full shrink-0"
+                                            class="h-2 w-2 shrink-0 rounded-full"
                                             style:background-color={b.color ??
                                                 "#71717a"}
                                         ></span>
                                         ({b.account_number}) {b.account_name}
                                     </div>
                                 </td>
-                                <td class="p-2">{b.currency}</td>
-                                <td class="p-2 text-right font-bold"
+                                <td>{b.currency}</td>
+                                <td class="text-right font-semibold"
                                     >{fmt(b.balance)}</td
                                 >
                             </tr>
@@ -363,29 +370,25 @@
 
     <!-- Informe 2: movimientos en un rango -->
     {#if tab === "movements"}
-        <div class="flex items-end justify-between gap-3 flex-wrap">
-            <div class="flex items-end gap-3">
-                <div class="flex flex-col gap-1">
-                    <span class="text-sm text-zinc-400">Desde</span>
+        <div class="flex flex-wrap items-end justify-between gap-3">
+            <div class="flex flex-wrap items-end gap-3">
+                <label class="flex flex-col gap-1.5">
+                    <span class="label-muted">Desde</span>
                     <input
-                        class="p-1 bg-zinc-800 rounded-md"
+                        class="field"
                         type="date"
                         bind:value={movementsFrom}
                     />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <span class="text-sm text-zinc-400">Hasta</span>
+                </label>
+                <label class="flex flex-col gap-1.5">
+                    <span class="label-muted">Hasta</span>
                     <input
-                        class="p-1 bg-zinc-800 rounded-md"
+                        class="field"
                         type="date"
                         bind:value={movementsTo}
                     />
-                </div>
-                <button
-                    type="button"
-                    onclick={loadMovements}
-                    class="border rounded-lg bg-white/10 hover:bg-white/20 border-zinc-800 px-4 py-1"
-                >
+                </label>
+                <button type="button" onclick={loadMovements} class="btn-primary">
                     Aplicar
                 </button>
             </div>
@@ -397,12 +400,10 @@
             />
         </div>
 
-        <div
-            class="flex flex-wrap gap-3 rounded-lg border border-zinc-800 bg-zinc-900/70 p-3"
-        >
+        <div class="filter-bar">
             <button
                 type="button"
-                class={`rounded-md border px-3 py-1 text-sm transition-colors ${exactMatchEnabled ? "border-amber-500 bg-amber-500/15 text-amber-400" : "border-zinc-700 bg-zinc-800 text-zinc-300"}`}
+                class={`btn text-sm ${exactMatchEnabled ? "border-amber-500/40 bg-amber-500/10 text-amber-300" : ""}`}
                 onclick={() => {
                     exactMatchEnabled = !exactMatchEnabled;
                     applyMovementFilters();
@@ -413,74 +414,72 @@
                     : "Coincidencia exacta: OFF"}
             </button>
             <input
-                class="min-w-44 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
+                class="field min-w-44"
                 placeholder="Tesorería"
                 bind:value={movementFilters.account}
                 oninput={applyMovementFilters}
             />
             <input
-                class="min-w-28 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
+                class="field min-w-28"
                 placeholder="Moneda"
                 bind:value={movementFilters.currency}
                 oninput={applyMovementFilters}
             />
         </div>
 
-        <div
-            class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden"
-        >
+        <div class="table-wrap overflow-x-auto">
             {#if loading}
-                <p class="p-4 text-zinc-400">Cargando...</p>
+                <p class="p-6 text-sm text-zinc-400">Cargando…</p>
             {:else if movements.length === 0}
-                <p class="p-4 text-zinc-400">No hay datos en este rango</p>
+                <div class="empty-state m-0 rounded-none border-0 bg-transparent">
+                    No hay datos en este rango
+                </div>
             {:else}
-                <table class="w-full text-sm">
-                    <thead class="bg-zinc-800/50 text-zinc-400 text-left">
+                <table class="data-table">
+                    <thead>
                         <tr>
-                            <th class="p-2">Tesorería</th>
-                            <th class="p-2">Moneda</th>
-                            <th class="p-2 text-right">Entradas</th>
-                            <th class="p-2 text-right">Salidas</th>
-                            <th class="p-2 text-right">Variación neta</th>
-                            <th class="p-2 text-right">Operaciones</th>
+                            <th>Tesorería</th>
+                            <th>Moneda</th>
+                            <th class="text-right">Entradas</th>
+                            <th class="text-right">Salidas</th>
+                            <th class="text-right">Variación neta</th>
+                            <th class="text-right">Operaciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {#each movements as m (m.account_id)}
-                            <tr
-                                class="border-t border-zinc-800 hover:bg-zinc-800"
-                            >
-                                <td class="p-2">
+                            <tr>
+                                <td>
                                     <div class="flex items-center gap-2">
                                         <span
-                                            class="w-2 h-2 rounded-full shrink-0"
+                                            class="h-2 w-2 shrink-0 rounded-full"
                                             style:background-color={m.color ??
                                                 "#71717a"}
                                         ></span>
                                         ({m.account_number}) {m.account_name}
                                     </div>
                                 </td>
-                                <td class="p-2">{m.currency}</td>
-                                <td class="p-2 text-right text-green-400">
+                                <td>{m.currency}</td>
+                                <td class="text-right text-emerald-400">
                                     {fmt(
                                         m.total_deposits + m.total_transfers_in,
                                     )}
                                 </td>
-                                <td class="p-2 text-right text-red-400">
+                                <td class="text-right text-red-400">
                                     {fmt(
                                         m.total_withdrawals +
                                             m.total_transfers_out,
                                     )}
                                 </td>
                                 <td
-                                    class="p-2 text-right font-bold {m.balance >=
+                                    class="text-right font-semibold {m.balance >=
                                     0
-                                        ? 'text-green-400'
+                                        ? 'text-emerald-400'
                                         : 'text-red-400'}"
                                 >
                                     {fmt(m.balance)}
                                 </td>
-                                <td class="p-2 text-right text-zinc-400"
+                                <td class="text-right text-zinc-400"
                                     >{m.transaction_count}</td
                                 >
                             </tr>
@@ -493,32 +492,25 @@
 
     <!-- Informe 3: saldo inicial y final del mes -->
     {#if tab === "monthly"}
-        <div class="flex items-end justify-between gap-3 flex-wrap">
-            <div class="flex items-end gap-3">
-                <div class="flex flex-col gap-1">
-                    <span class="text-sm text-zinc-400">Mes</span>
-                    <select
-                        class="p-1 bg-zinc-800 rounded-md"
-                        bind:value={selectedMonth}
-                    >
+        <div class="flex flex-wrap items-end justify-between gap-3">
+            <div class="flex flex-wrap items-end gap-3">
+                <label class="flex flex-col gap-1.5">
+                    <span class="label-muted">Mes</span>
+                    <select class="field" bind:value={selectedMonth}>
                         {#each MONTH_NAMES as name, i (i)}
                             <option value={i + 1}>{name}</option>
                         {/each}
                     </select>
-                </div>
-                <div class="flex flex-col gap-1">
-                    <span class="text-sm text-zinc-400">Año</span>
+                </label>
+                <label class="flex flex-col gap-1.5">
+                    <span class="label-muted">Año</span>
                     <input
-                        class="p-1 w-24 bg-zinc-800 rounded-md"
+                        class="field w-28"
                         type="number"
                         bind:value={selectedYear}
                     />
-                </div>
-                <button
-                    type="button"
-                    onclick={loadMonthly}
-                    class="border rounded-lg bg-white/10 hover:bg-white/20 border-zinc-800 px-4 py-1"
-                >
+                </label>
+                <button type="button" onclick={loadMonthly} class="btn-primary">
                     Aplicar
                 </button>
             </div>
@@ -534,12 +526,10 @@
             />
         </div>
 
-        <div
-            class="flex flex-wrap gap-3 rounded-lg border border-zinc-800 bg-zinc-900/70 p-3"
-        >
+        <div class="filter-bar">
             <button
                 type="button"
-                class={`rounded-md border px-3 py-1 text-sm transition-colors ${exactMatchEnabled ? "border-amber-500 bg-amber-500/15 text-amber-400" : "border-zinc-700 bg-zinc-800 text-zinc-300"}`}
+                class={`btn text-sm ${exactMatchEnabled ? "border-amber-500/40 bg-amber-500/10 text-amber-300" : ""}`}
                 onclick={() => {
                     exactMatchEnabled = !exactMatchEnabled;
                     applyMonthlyFilters();
@@ -550,70 +540,68 @@
                     : "Coincidencia exacta: OFF"}
             </button>
             <input
-                class="min-w-44 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
+                class="field min-w-44"
                 placeholder="Tesorería"
                 bind:value={monthlyFilters.account}
                 oninput={applyMonthlyFilters}
             />
             <input
-                class="min-w-28 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
+                class="field min-w-28"
                 placeholder="Moneda"
                 bind:value={monthlyFilters.currency}
                 oninput={applyMonthlyFilters}
             />
         </div>
 
-        <div
-            class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden"
-        >
+        <div class="table-wrap overflow-x-auto">
             {#if loading}
-                <p class="p-4 text-zinc-400">Cargando...</p>
+                <p class="p-6 text-sm text-zinc-400">Cargando…</p>
             {:else if monthly.length === 0}
-                <p class="p-4 text-zinc-400">No hay tesorerías</p>
+                <div class="empty-state m-0 rounded-none border-0 bg-transparent">
+                    No hay tesorerías
+                </div>
             {:else}
                 {#if !monthly[0].month_finished}
                     <p
-                        class="p-2 text-xs text-zinc-500 border-b border-zinc-800"
+                        class="border-b border-zinc-800 px-3 py-2 text-xs text-zinc-500"
                     >
                         El mes aún no ha finalizado — el saldo final corresponde
                         al día de hoy ({monthly[0].period_end}).
                     </p>
                 {/if}
-                <table class="w-full text-sm">
-                    <thead class="bg-zinc-800/50 text-zinc-400 text-left">
+                <table class="data-table">
+                    <thead>
                         <tr>
-                            <th class="p-2">Tesorería</th>
-                            <th class="p-2">Moneda</th>
-                            <th class="p-2 text-right">Saldo inicial</th>
-                            <th class="p-2 text-right">Saldo final</th>
-                            <th class="p-2 text-right">Variación</th>
+                            <th>Tesorería</th>
+                            <th>Moneda</th>
+                            <th class="text-right">Saldo inicial</th>
+                            <th class="text-right">Saldo final</th>
+                            <th class="text-right">Variación</th>
                         </tr>
                     </thead>
                     <tbody>
                         {#each monthly as m (m.account_id)}
-                            <tr
-                                class="border-t border-zinc-800 hover:bg-zinc-800"
-                            >
-                                <td class="p-2">
+                            <tr>
+                                <td>
                                     <div class="flex items-center gap-2">
                                         <span
-                                            class="w-2 h-2 rounded-full shrink-0"
+                                            class="h-2 w-2 shrink-0 rounded-full"
                                             style:background-color={m.color ??
                                                 "#71717a"}
                                         ></span>
                                         ({m.account_number}) {m.account_name}
                                     </div>
                                 </td>
-                                <td class="p-2">{m.currency}</td>
-                                <td class="p-2 text-right"
+                                <td>{m.currency}</td>
+                                <td class="text-right"
                                     >{fmt(m.opening_balance)}</td
                                 >
-                                <td class="p-2 text-right font-bold"
+                                <td class="text-right font-semibold"
                                     >{fmt(m.closing_balance)}</td
                                 >
                                 <td
-                                    class="p-2 text-right {m.net_change >= 0
-                                        ? 'text-green-400'
+                                    class="text-right {m.net_change >= 0
+                                        ? 'text-emerald-400'
                                         : 'text-red-400'}"
                                 >
                                     {m.net_change >= 0 ? "+" : ""}{fmt(

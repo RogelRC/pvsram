@@ -36,37 +36,37 @@
     }
 </script>
 
-<div class="flex items-center gap-2 ml-auto">
+<div class="ml-auto flex items-center gap-1.5">
     {#if error}
-        <span class="text-red-400 text-xs">{error}</span>
+        <span class="mr-1 text-xs text-red-300">{error}</span>
     {/if}
     <button
         type="button"
         disabled={exporting || data.length === 0}
         onclick={() => handleExport(() => exportToCsv(data, columns, filename))}
-        class="border rounded-md p-1 hover:bg-zinc-700 border-zinc-800 disabled:opacity-50"
+        class="btn-icon"
         title="Exportar a CSV"
     >
-        <FileText size={18} />
+        <FileText size={16} />
     </button>
     <button
         type="button"
         disabled={exporting || data.length === 0}
         onclick={() =>
             handleExport(() => exportToExcel(data, columns, filename))}
-        class="border rounded-md p-1 hover:bg-zinc-700 border-zinc-800 disabled:opacity-50"
+        class="btn-icon"
         title="Exportar a Excel"
     >
-        <FileSpreadsheet size={18} />
+        <FileSpreadsheet size={16} />
     </button>
     <button
         type="button"
         disabled={exporting || data.length === 0}
         onclick={() =>
             handleExport(() => exportToPdf(title, data, columns, filename))}
-        class="border rounded-md p-1 hover:bg-zinc-700 border-zinc-800 disabled:opacity-50"
+        class="btn-icon"
         title="Exportar a PDF"
     >
-        <FileDown size={18} />
+        <FileDown size={16} />
     </button>
 </div>

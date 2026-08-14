@@ -120,58 +120,64 @@
     onMount(loadAccounts);
 </script>
 
-<main class="flex flex-col p-4 gap-4">
-    <div class="flex">
-        <h1 class="text-2xl font-bold mr-auto">Tesorerías</h1>
+<main class="page">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Tesorerías</h1>
+            <p class="page-subtitle">
+                Administra tus cuentas y consulta saldos al instante
+            </p>
+        </div>
         <CreateAccount onCreated={loadAccounts} />
     </div>
 
-    <div
-        class="flex flex-wrap gap-3 rounded-lg border border-zinc-800 bg-zinc-900/70 p-3"
-    >
+    <div class="filter-bar">
         <input
-            class="min-w-36 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
+            class="field min-w-36"
             placeholder="Número"
             bind:value={filters.number}
             oninput={applyFilters}
         />
         <input
-            class="min-w-36 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
+            class="field min-w-36"
             placeholder="Nombre"
             bind:value={filters.name}
             oninput={applyFilters}
         />
         <input
-            class="min-w-36 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
+            class="field min-w-36"
             placeholder="Comentario"
             bind:value={filters.owner}
             oninput={applyFilters}
         />
         <input
-            class="min-w-28 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
+            class="field min-w-28"
             placeholder="Moneda"
             bind:value={filters.currency}
             oninput={applyFilters}
         />
         <input
-            class="min-w-40 rounded-md border border-zinc-800 bg-zinc-800 px-2 py-1 text-sm"
+            class="field min-w-40"
             placeholder="Descripción"
             bind:value={filters.description}
             oninput={applyFilters}
         />
     </div>
 
-    <div class="grid lg:grid-cols-4 grid-cols-2 gap-4">
-        {#each filteredAccounts as account (account.id)}
-            <Card
-                {account}
-                balance={balances[account.id] ?? 0}
-                onUpdated={loadAccounts}
-            />
-        {/each}
-    </div>
     {#if filteredAccounts.length === 0}
-        <p>No hay tesorerías que coincidan con los filtros</p>
+        <div class="empty-state">
+            No hay tesorerías que coincidan con los filtros
+        </div>
+    {:else}
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            {#each filteredAccounts as account (account.id)}
+                <Card
+                    {account}
+                    balance={balances[account.id] ?? 0}
+                    onUpdated={loadAccounts}
+                />
+            {/each}
+        </div>
     {/if}
 </main>
 
