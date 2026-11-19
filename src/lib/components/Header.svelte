@@ -1,20 +1,67 @@
 <script lang="ts">
+    import { onMount } from "svelte";
     import { page } from "$app/stores";
     import { invoke } from "@tauri-apps/api/core";
+    import { getCurrentWindow } from "@tauri-apps/api/window";
     import { open, save } from "@tauri-apps/plugin-dialog";
     import ChangePasswordButton from "$lib/components/Auth/ChangePasswordButton.svelte";
+    import {
+        getWindowMode,
+        setWindowMode,
+        type WindowMode,
+    } from "$lib/services/settings";
     import { Upload, Download, Settings } from "lucide-svelte";
     import logo from "$lib/assets/logo-small.svg";
 
     let isSettingsMenuOpen = $state(false);
+    let windowMode = $state<WindowMode>("fullscreen");
+
+    const windowModeLabels: Record<WindowMode, string> = {
+        fullscreen: "Completa",
+        maximized: "Maximizada",
+        windowed: "Ventana",
+    };
+
+    async function loadWindowMode() {
+        try {
+            windowMode = await getWindowMode();
+        } catch {
+            windowMode = "fullscreen";
+        }
+    }
+
+    async function applyWindowMode(mode: WindowMode) {
+        const win = getCurrentWindow();
+        try {
+            if (mode === "fullscreen") {
+                await win.unmaximize();
+                await win.setFullscreen(true);
+            } else if (mode === "maximized") {
+                await win.setFullscreen(false);
+                await win.maximize();
+            } else {
+                await win.setFullscreen(false);
+                await win.unmaximize();
+            }
+            await setWindowMode(mode);
+            windowMode = mode;
+        } catch (error) {
+            window.alert(`No se pudo cambiar el modo de ventana: ${error}`);
+        }
+    }
 
     function toggleSettingsMenu() {
         isSettingsMenuOpen = !isSettingsMenuOpen;
+        if (isSettingsMenuOpen) {
+            void loadWindowMode();
+        }
     }
 
     function closeSettingsMenu() {
         isSettingsMenuOpen = false;
     }
+
+    onMount(loadWindowMode);
 
     function isActive(path: string): boolean {
         const currentPath = $page.url.pathname;
@@ -136,7 +183,7 @@
                     onclick={closeSettingsMenu}
                 ></button>
                 <div
-                    class="absolute right-0 z-50 mt-2 flex w-60 flex-col gap-1 rounded-xl border border-zinc-800 bg-zinc-900/95 p-2 shadow-xl shadow-black/40 backdrop-blur-md"
+                    class="absolute right-0 z-50 mt-2 flex w-64 flex-col gap-1 rounded-xl border border-zinc-800 bg-zinc-900/95 p-2 shadow-xl shadow-black/40 backdrop-blur-md"
                     role="menu"
                 >
                     <button
@@ -165,6 +212,30 @@
                         <Download size={16} />
                         Importar BD
                     </button>
+                    <div class="my-1 border-t border-zinc-800"></div>
+                    <div class="px-2 pt-1 pb-1 text-xs font-medium text-zinc-500">
+                        Ventana: {windowModeLabels[windowMode]}
+                    </div>
+                    <div class="flex gap-1 px-1 pb-1">
+                        {#each [
+                            { mode: "windowed" as WindowMode, label: "Ventana" },
+                            { mode: "maximized" as WindowMode, label: "Maximizada" },
+                            { mode: "fullscreen" as WindowMode, label: "Completa" },
+                        ] as opt}
+                            <button
+                                type="button"
+                                class={`flex-1 rounded-md px-2 py-1.5 text-xs transition-colors ${
+                                    windowMode === opt.mode
+                                        ? "bg-indigo-500/20 text-indigo-300 ring-1 ring-indigo-400/30"
+                                        : "text-zinc-300 hover:bg-zinc-800"
+                                }`}
+                                role="menuitem"
+                                onclick={() => applyWindowMode(opt.mode)}
+                            >
+                                {opt.label}
+                            </button>
+                        {/each}
+                    </div>
                     <div class="my-1 border-t border-zinc-800"></div>
                     <ChangePasswordButton />
                 </div>

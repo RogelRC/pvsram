@@ -11,6 +11,7 @@
     } from "$lib/services/reports";
     import ExportButtons from "$lib/components/ExportButtons.svelte";
     import type { ExportColumn } from "$lib/utils/export";
+    import { formatCount, formatMoney } from "$lib/utils/money";
 
     type Tab = "balances" | "movements" | "monthly";
 
@@ -63,10 +64,7 @@
     let exactMatchEnabled = $state(false);
 
     function fmt(n: number): string {
-        return n.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        });
+        return formatMoney(n);
     }
 
     function normalizeValue(value: string | null | undefined): string {
@@ -216,7 +214,7 @@
             accessor: (a) => `(${a.account_number}) ${a.account_name}`,
         },
         { header: "Moneda", accessor: (a) => a.currency },
-        { header: "Saldo actual", accessor: (a) => a.balance.toFixed(2) },
+        { header: "Saldo actual", accessor: (a) => fmt(a.balance) },
     ];
 
     const movementsColumns: ExportColumn<AccountStats>[] = [
@@ -227,16 +225,14 @@
         { header: "Moneda", accessor: (a) => a.currency },
         {
             header: "Entradas",
-            accessor: (a) =>
-                (a.total_deposits + a.total_transfers_in).toFixed(2),
+            accessor: (a) => fmt(a.total_deposits + a.total_transfers_in),
         },
         {
             header: "Salidas",
-            accessor: (a) =>
-                (a.total_withdrawals + a.total_transfers_out).toFixed(2),
+            accessor: (a) => fmt(a.total_withdrawals + a.total_transfers_out),
         },
-        { header: "Variación neta", accessor: (a) => a.balance.toFixed(2) },
-        { header: "Operaciones", accessor: (a) => a.transaction_count },
+        { header: "Variación neta", accessor: (a) => fmt(a.balance) },
+        { header: "Operaciones", accessor: (a) => formatCount(a.transaction_count) },
     ];
 
     const monthlyColumns: ExportColumn<MonthlyBalanceReport>[] = [
@@ -245,15 +241,9 @@
             accessor: (m) => `(${m.account_number}) ${m.account_name}`,
         },
         { header: "Moneda", accessor: (m) => m.currency },
-        {
-            header: "Saldo inicial",
-            accessor: (m) => m.opening_balance.toFixed(2),
-        },
-        {
-            header: "Saldo final",
-            accessor: (m) => m.closing_balance.toFixed(2),
-        },
-        { header: "Variación", accessor: (m) => m.net_change.toFixed(2) },
+        { header: "Saldo inicial", accessor: (m) => fmt(m.opening_balance) },
+        { header: "Saldo final", accessor: (m) => fmt(m.closing_balance) },
+        { header: "Variación", accessor: (m) => fmt(m.net_change) },
     ];
 </script>
 
@@ -480,7 +470,7 @@
                                     {fmt(m.balance)}
                                 </td>
                                 <td class="text-right text-zinc-400"
-                                    >{m.transaction_count}</td
+                                    >{formatCount(m.transaction_count)}</td
                                 >
                             </tr>
                         {/each}

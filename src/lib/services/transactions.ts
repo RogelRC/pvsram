@@ -93,6 +93,9 @@ export interface TransactionFilters {
     comment?: string | null;
     concept?: string | null;
     conceptId?: number | null;
+    accountQuery?: string | null;
+    destinationQuery?: string | null;
+    exactMatch?: boolean | null;
     from?: string | null;
     to?: string | null;
     sortBy?: "occurred_at" | "amount" | null;

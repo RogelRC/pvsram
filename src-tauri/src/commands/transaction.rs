@@ -307,9 +307,15 @@ pub struct TransactionFilters {
     pub currency: Option<String>,
     pub amount_min: Option<f64>,
     pub amount_max: Option<f64>,
-    pub comment: Option<String>,  // búsqueda parcial (LIKE)
-    pub concept: Option<String>,  // búsqueda parcial por nombre de concepto
+    pub comment: Option<String>,  // búsqueda por comentario
+    pub concept: Option<String>,  // búsqueda por nombre de concepto
     pub concept_id: Option<i64>,
+    /// Búsqueda por texto en la cuenta origen (nombre o número)
+    pub account_query: Option<String>,
+    /// Búsqueda por texto en la cuenta destino/relacionada (nombre o número)
+    pub destination_query: Option<String>,
+    /// Si es true, las búsquedas de texto usan coincidencia exacta; si no, LIKE parcial
+    pub exact_match: Option<bool>,
     pub from: Option<String>,     // occurred_at >=
     pub to: Option<String>,       // occurred_at <=
     pub sort_by: Option<String>,  // "occurred_at" | "amount"
@@ -353,6 +359,7 @@ pub struct TransactionStats {
 /// desde `transactions t JOIN accounts a ... LEFT JOIN accounts ra ...`
 fn apply_filters(qb: &mut QueryBuilder<Sqlite>, f: &TransactionFilters) {
     let mut has_where = false;
+    let exact = f.exact_match.unwrap_or(false);
 
     if let Some(account_id) = f.account_id {
         qb.push(if has_where { " AND " } else { " WHERE " });
@@ -372,15 +379,25 @@ fn apply_filters(qb: &mut QueryBuilder<Sqlite>, f: &TransactionFilters) {
     }
 
     if let Some(ref t) = f.transaction_type {
-        qb.push(if has_where { " AND " } else { " WHERE " });
-        has_where = true;
-        qb.push("t.type = ").push_bind(t.clone());
+        let t = t.trim();
+        if !t.is_empty() {
+            qb.push(if has_where { " AND " } else { " WHERE " });
+            has_where = true;
+            qb.push("t.type = ").push_bind(t.to_string());
+        }
     }
 
     if let Some(ref currency) = f.currency {
-        qb.push(if has_where { " AND " } else { " WHERE " });
-        has_where = true;
-        qb.push("a.currency = ").push_bind(currency.clone());
+        let c = currency.trim();
+        if !c.is_empty() {
+            qb.push(if has_where { " AND " } else { " WHERE " });
+            has_where = true;
+            if exact {
+                qb.push("a.currency = ").push_bind(c.to_string());
+            } else {
+                qb.push("a.currency LIKE ").push_bind(format!("%{}%", c));
+            }
+        }
     }
 
     if let Some(amount_min) = f.amount_min {
@@ -396,11 +413,59 @@ fn apply_filters(qb: &mut QueryBuilder<Sqlite>, f: &TransactionFilters) {
     }
 
     if let Some(ref desc) = f.comment {
-        if !desc.trim().is_empty() {
+        let q = desc.trim();
+        if !q.is_empty() {
             qb.push(if has_where { " AND " } else { " WHERE " });
             has_where = true;
-            qb.push("t.comment LIKE ")
-                .push_bind(format!("%{}%", desc.trim()));
+            if exact {
+                qb.push("t.comment = ").push_bind(q.to_string());
+            } else {
+                qb.push("t.comment LIKE ").push_bind(format!("%{}%", q));
+            }
+        }
+    }
+
+    if let Some(ref aq) = f.account_query {
+        let q = aq.trim();
+        if !q.is_empty() {
+            qb.push(if has_where { " AND " } else { " WHERE " });
+            has_where = true;
+            if exact {
+                qb.push("(a.name = ")
+                    .push_bind(q.to_string())
+                    .push(" OR a.number = ")
+                    .push_bind(q.to_string())
+                    .push(")");
+            } else {
+                let like = format!("%{}%", q);
+                qb.push("(a.name LIKE ")
+                    .push_bind(like.clone())
+                    .push(" OR a.number LIKE ")
+                    .push_bind(like)
+                    .push(")");
+            }
+        }
+    }
+
+    if let Some(ref dq) = f.destination_query {
+        let q = dq.trim();
+        if !q.is_empty() {
+            qb.push(if has_where { " AND " } else { " WHERE " });
+            has_where = true;
+            if exact {
+                qb.push("(ra.name = ")
+                    .push_bind(q.to_string())
+                    .push(" OR ra.number = ")
+                    .push_bind(q.to_string())
+                    .push(")");
+            } else {
+                let like = format!("%{}%", q);
+                qb.push("(ra.name LIKE ")
+                    .push_bind(like.clone())
+                    .push(" OR ra.number LIKE ")
+                    .push_bind(like)
+                    .push(")");
+            }
         }
     }
 
@@ -417,17 +482,29 @@ fn apply_filters(qb: &mut QueryBuilder<Sqlite>, f: &TransactionFilters) {
     }
 
     if let Some(ref concept) = f.concept {
-        if !concept.trim().is_empty() {
+        let q = concept.trim();
+        if !q.is_empty() {
             qb.push(if has_where { " AND " } else { " WHERE " });
             has_where = true;
-            qb.push(
-                "EXISTS (
-                    SELECT 1 FROM transaction_concepts tc
-                    JOIN concepts c ON c.id = tc.concept_id
-                    WHERE tc.transaction_id = t.id AND c.name LIKE ",
-            )
-            .push_bind(format!("%{}%", concept.trim()))
-            .push(")");
+            if exact {
+                qb.push(
+                    "EXISTS (
+                        SELECT 1 FROM transaction_concepts tc
+                        JOIN concepts c ON c.id = tc.concept_id
+                        WHERE tc.transaction_id = t.id AND c.name = ",
+                )
+                .push_bind(q.to_string())
+                .push(")");
+            } else {
+                qb.push(
+                    "EXISTS (
+                        SELECT 1 FROM transaction_concepts tc
+                        JOIN concepts c ON c.id = tc.concept_id
+                        WHERE tc.transaction_id = t.id AND c.name LIKE ",
+                )
+                .push_bind(format!("%{}%", q))
+                .push(")");
+            }
         }
     }
 

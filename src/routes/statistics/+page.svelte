@@ -1,4 +1,4 @@
-<script lang="ts">
+﻿<script lang="ts">
     import { onMount } from "svelte";
     import {
         getStatsByAccount,
@@ -6,6 +6,7 @@
         type AccountStats,
         type CurrencyStats,
     } from "$lib/services/statistics";
+    import { formatCount, formatMoney } from "$lib/utils/money";
 
     let loading = $state(false);
     let error = $state<string | null>(null);
@@ -100,10 +101,7 @@
     }
 
     function fmt(amount: number): string {
-        return amount.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        });
+        return formatMoney(amount);
     }
 
     onMount(loadData);
@@ -160,10 +158,7 @@
                                     {c.currency}
                                 </h3>
                                 <span class="badge bg-zinc-800 text-zinc-400">
-                                    {c.account_count} tesorería{c.account_count ===
-                                    1
-                                        ? ""
-                                        : "s"}
+                                    {formatCount(c.account_count)} tesorería{c.account_count === 1 ? "" : "s"}
                                 </span>
                             </div>
                             <div>
@@ -193,7 +188,7 @@
                                 </div>
                             </div>
                             <span class="text-xs text-zinc-500">
-                                {c.transaction_count} operaciones
+                                {formatCount(c.transaction_count)} operaciones
                             </span>
                         </div>
                     {/each}
@@ -236,24 +231,12 @@
                                         </div>
                                     </td>
                                     <td>{a.currency}</td>
-                                    <td class="text-right text-emerald-400"
-                                        >{fmt(a.total_deposits)}</td
-                                    >
-                                    <td class="text-right text-red-400"
-                                        >{fmt(a.total_withdrawals)}</td
-                                    >
-                                    <td class="text-right text-zinc-300"
-                                        >{fmt(a.total_transfers_out)}</td
-                                    >
-                                    <td class="text-right text-zinc-300"
-                                        >{fmt(a.total_transfers_in)}</td
-                                    >
-                                    <td class="text-right font-semibold"
-                                        >{fmt(a.balance)}</td
-                                    >
-                                    <td class="text-right text-zinc-400"
-                                        >{a.transaction_count}</td
-                                    >
+                                    <td class="text-right text-emerald-400">{fmt(a.total_deposits)}</td>
+                                    <td class="text-right text-red-400">{fmt(a.total_withdrawals)}</td>
+                                    <td class="text-right text-zinc-300">{fmt(a.total_transfers_out)}</td>
+                                    <td class="text-right text-zinc-300">{fmt(a.total_transfers_in)}</td>
+                                    <td class="text-right font-semibold">{fmt(a.balance)}</td>
+                                    <td class="text-right text-zinc-400">{formatCount(a.transaction_count)}</td>
                                 </tr>
                             {/each}
                         </tbody>
